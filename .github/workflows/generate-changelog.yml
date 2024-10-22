@@ -2,7 +2,7 @@ name: Generate Changelog
 
 on:
   pull_request:
-    types: [closed]  # Workflow wird ausgeführt, wenn ein Pull Request geschlossen/merged wird.
+    types: [closed]  # Workflow wird ausgeführt, wenn ein PR geschlossen/merged wird.
     branches:
       - master  # Zielbranch ist master
 
@@ -17,14 +17,20 @@ jobs:
       - name: Extract commits from the pull request
         run: |
           # Hole die Pull Request Nummer und Branch Details
-          PR_NUMBER=$(echo ${{ github.event.pull_request.number }})
-          SOURCE_BRANCH=$(echo ${{ github.event.pull_request.head.ref }})
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          SOURCE_BRANCH=${{ github.event.pull_request.head.ref }}
 
           echo "Pull Request Nummer: $PR_NUMBER"
           echo "Source Branch: $SOURCE_BRANCH"
 
           # Hole alle Commits aus dem PR, die mit # beginnen
-          COMMITS=$(git log --pretty=format:"%H %s" --grep '^#' $SOURCE_BRANCH)
+          COMMITS=$(git log --pretty=format:"%H %s" --grep '^#' origin/${SOURCE_BRANCH})
+
+          # Falls keine commits gefunden wurden, breche ab
+          if [ -z "$COMMITS" ]; then
+            echo "Keine commits mit # gefunden. Beende."
+            exit 0
+          fi
 
           # JSON-Datei erstellen und Commit-Informationen speichern
           echo "{
