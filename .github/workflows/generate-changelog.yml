@@ -2,9 +2,9 @@ name: Generate Changelog
 
 on:
   pull_request:
-    types: [closed]  # Workflow wird ausgeführt, wenn ein PR geschlossen/merged wird.
+    types: [closed]
     branches:
-      - master  # Zielbranch ist master
+      - master
 
 jobs:
   generate_changelog:
@@ -12,27 +12,28 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3  # Update auf Version 3
+
+      - name: Set up Node.js environment
+        uses: actions/setup-node@v3  # Nutzt die neueste Node.js-Version
+        with:
+          node-version: '16'  # Setze auf Node.js 16, du kannst auch 18 oder 20 wählen
 
       - name: Extract commits from the pull request
         run: |
-          # Hole die Pull Request Nummer und Branch Details
           PR_NUMBER=${{ github.event.pull_request.number }}
           SOURCE_BRANCH=${{ github.event.pull_request.head.ref }}
 
-          echo "Pull Request Nummer: $PR_NUMBER"
+          echo "Pull Request Number: $PR_NUMBER"
           echo "Source Branch: $SOURCE_BRANCH"
 
-          # Hole alle Commits aus dem PR, die mit # beginnen
           COMMITS=$(git log --pretty=format:"%H %s" --grep '^#' origin/${SOURCE_BRANCH})
 
-          # Falls keine commits gefunden wurden, breche ab
           if [ -z "$COMMITS" ]; then
-            echo "Keine commits mit # gefunden. Beende."
+            echo "No commits found with #. Exiting."
             exit 0
           fi
 
-          # JSON-Datei erstellen und Commit-Informationen speichern
           echo "{
             \"pull_request\": $PR_NUMBER,
             \"commits\": [" > changelog.json
@@ -43,7 +44,6 @@ jobs:
             echo "  {\"hash\": \"$HASH\", \"message\": \"$MESSAGE\"}," >> changelog.json
           done <<< "$COMMITS"
 
-          # Schließe die JSON-Datei korrekt ab
           echo "]
           }" >> changelog.json
 
