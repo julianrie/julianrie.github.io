@@ -12,12 +12,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3  # Update auf Version 3
+        uses: actions/checkout@v3  # Verwende die neueste Version von checkout
 
       - name: Set up Node.js environment
-        uses: actions/setup-node@v3  # Nutzt die neueste Node.js-Version
+        uses: actions/setup-node@v3  # Stelle sicher, dass Node.js v16+ verwendet wird
         with:
-          node-version: '16'  # Setze auf Node.js 16, du kannst auch 18 oder 20 wählen
+          node-version: '16'  # Du kannst auch 18 oder 20 verwenden
 
       - name: Extract commits from the pull request
         run: |
@@ -54,3 +54,5 @@ jobs:
           git add changelog.json
           git commit -m "Update changelog.json with PR #${{ github.event.pull_request.number }}"
           git push origin master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Nutze das GITHUB_TOKEN zum Pushen
