@@ -4,21 +4,24 @@ on:
   pull_request:
     types: [closed]
     branches:
-      - master  # Nur auf dem master-Branch ausführen
+      - master
+
+concurrency:
+  group: "changelog-and-pages"
+  cancel-in-progress: true
 
 jobs:
   generate_changelog:
-    if: github.ref == 'refs/heads/master'  # Stellt sicher, dass es nur auf master läuft
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3  # Verwende die neueste Version von checkout
+        uses: actions/checkout@v3
 
       - name: Set up Node.js environment
         uses: actions/setup-node@v3
         with:
-          node-version: '16'  # Du kannst auch 18 oder 20 verwenden
+          node-version: '16'
 
       - name: Extract commits from the pull request
         run: |
@@ -56,4 +59,4 @@ jobs:
           git commit -m "Update changelog.json with PR #${{ github.event.pull_request.number }}"
           git push origin master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Nutze das GITHUB_TOKEN zum Pushen
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
