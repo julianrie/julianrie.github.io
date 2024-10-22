@@ -1,0 +1,47 @@
+{
+    "company": {
+      "name": "Tech Solutions GmbH",
+      "location": "Berlin",
+      "employees": [
+        {
+          "id": 1,
+          "name": "Max Mustermann",
+          "position": "Software Engineer",
+          "age": 30,
+          "children": [
+            {
+              "id": 1,
+              "name": "Anna Mustermann",
+              "age": 5
+            },
+            {
+              "id": 2,
+              "name": "Lukas Mustermann",
+              "age": 3
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "Erika Musterfrau",
+          "position": "Product Manager",
+          "age": 35,
+          "children": [
+            {
+              "id": 1,
+              "name": "Clara Musterfrau",
+              "age": 7
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "Johann Schmidt",
+          "position": "Data Analyst",
+          "age": 28,
+          "children": []
+        }
+      ]
+    }
+  }
+  
