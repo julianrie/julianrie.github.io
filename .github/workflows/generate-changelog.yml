@@ -1,0 +1,50 @@
+name: Generate Changelog
+
+on:
+  pull_request:
+    types: [closed]  # Workflow wird ausgeführt, wenn ein Pull Request geschlossen/merged wird.
+    branches:
+      - master  # Zielbranch ist master
+
+jobs:
+  generate_changelog:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Extract commits from the pull request
+        run: |
+          # Hole die Pull Request Nummer und Branch Details
+          PR_NUMBER=$(echo ${{ github.event.pull_request.number }})
+          SOURCE_BRANCH=$(echo ${{ github.event.pull_request.head.ref }})
+
+          echo "Pull Request Nummer: $PR_NUMBER"
+          echo "Source Branch: $SOURCE_BRANCH"
+
+          # Hole alle Commits aus dem PR, die mit # beginnen
+          COMMITS=$(git log --pretty=format:"%H %s" --grep '^#' $SOURCE_BRANCH)
+
+          # JSON-Datei erstellen und Commit-Informationen speichern
+          echo "{
+            \"pull_request\": $PR_NUMBER,
+            \"commits\": [" > changelog.json
+
+          while IFS= read -r line; do
+            HASH=$(echo $line | cut -d ' ' -f 1)
+            MESSAGE=$(echo $line | cut -d ' ' -f 2-)
+            echo "  {\"hash\": \"$HASH\", \"message\": \"$MESSAGE\"}," >> changelog.json
+          done <<< "$COMMITS"
+
+          # Schließe die JSON-Datei korrekt ab
+          echo "]
+          }" >> changelog.json
+
+      - name: Commit and push the changelog.json file
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add changelog.json
+          git commit -m "Update changelog.json with PR #${{ github.event.pull_request.number }}"
+          git push origin master
