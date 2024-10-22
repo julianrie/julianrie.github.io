@@ -5,7 +5,7 @@
       "employees": [
         {
           "id": 1,
-          "name": "Max Mustermann",
+          "name": "Max Mustermann ist schlau",
           "position": "Software Engineer",
           "age": 30,
           "children": [
@@ -16,7 +16,7 @@
             },
             {
               "id": 2,
-              "name": "Lukas Mustermann",
+              "name": "Lukas Mustermann ist ebenfalls schlau",
               "age": 3
             }
           ]
