@@ -24,6 +24,7 @@ jobs:
 
       # Commits mit `#` filtern
       - name: Get commits with `#`
+        id: get_commits
         run: |
           # Hole die Commits im Pull Request (vom base Branch bis zum aktuellen Branch)
           echo "Fetching commits between origin/${{ github.base_ref }} and HEAD"
@@ -42,6 +43,9 @@ jobs:
             exit 0
           fi
 
+          # Speichern der gefilterten Commits als Umgebungsvariable
+          echo "changes=$CHANGES" >> $GITHUB_ENV
+
       # Falls changelog.json nicht existiert, erstelle die Datei
       - name: Create changelog.json if it does not exist
         run: |
@@ -55,7 +59,7 @@ jobs:
       - name: Update changelog.json with new changes
         run: |
           echo "Appending new changes to changelog.json"
-          echo "$CHANGES" | jq -R -s -c 'split("\n")[:-1] | map({"commit": .})' > new_changes.json
+          echo "${{ env.changes }}" | jq -R -s -c 'split("\n")[:-1] | map({"commit": .})' > new_changes.json
           jq -s '.[0] + .[1]' changelog.json new_changes.json > updated_changelog.json
           mv updated_changelog.json changelog.json
           echo "Updated changelog.json:"
