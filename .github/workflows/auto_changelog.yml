@@ -24,8 +24,8 @@ jobs:
 
       # Commits mit `#` filtern
       - name: Get commits with `#`
+        id: get_commits
         run: |
-          # Hole die Commits im Pull Request (vom base Branch bis zum aktuellen Branch)
           echo "Fetching commits between origin/${{ github.base_ref }} and HEAD"
           COMMITS=$(git log origin/${{ github.base_ref }}..HEAD --oneline)
           echo "Commits found:"
@@ -39,8 +39,14 @@ jobs:
           # Falls keine Commits gefunden werden, beende den Prozess
           if [ -z "$CHANGES" ]; then
             echo "No commits with '#' found."
+            echo "commits=0" >> $GITHUB_ENV  # setze eine Umgebungsvariable
             exit 0
           fi
+
+          echo "commits=1" >> $GITHUB_ENV  # setze eine Umgebungsvariable
+
+          # Speichere die gefilterten Commits in einer Datei
+          echo "$CHANGES" > filtered_commits.txt
 
       # Falls changelog.json nicht existiert, erstelle die Datei
       - name: Create changelog.json if it does not exist
@@ -49,17 +55,22 @@ jobs:
             echo "Creating changelog.json"
             echo "[]" > changelog.json
           fi
-          cat changelog.json
 
       # Füge neue Änderungen zur changelog.json hinzu
       - name: Update changelog.json with new changes
         run: |
-          echo "Appending new changes to changelog.json"
-          echo "$CHANGES" | jq -R -s -c 'split("\n")[:-1] | map({"commit": .})' > new_changes.json
-          jq -s '.[0] + .[1]' changelog.json new_changes.json > updated_changelog.json
-          mv updated_changelog.json changelog.json
-          echo "Updated changelog.json:"
-          cat changelog.json
+          if [ "$commits" -eq 1 ]; then  # prüfe die Umgebungsvariable
+            echo "Appending new changes to changelog.json"
+            while IFS= read -r line; do
+              echo "$line" | jq -R -s -c '{ "commit": . }' >> new_changes.json
+            done < filtered_commits.txt
+            jq -s '.[0] + .[1]' changelog.json new_changes.json > updated_changelog.json
+            mv updated_changelog.json changelog.json
+            echo "Updated changelog.json:"
+            cat changelog.json
+          else
+            echo "No commits to add to changelog.json."
+          fi
 
       # Änderungen an changelog.json commiten und pushen
       - name: Commit changes
