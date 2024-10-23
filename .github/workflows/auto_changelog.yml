@@ -28,8 +28,15 @@ jobs:
         run: |
           echo "Fetching commits between origin/${{ github.base_ref }} and HEAD"
           COMMITS=$(git log origin/${{ github.base_ref }}..HEAD --oneline)
+          
+          # Debug: Zeige die gefundenen Commits
           echo "Commits found:"
-          echo "$COMMITS"
+          if [ -z "$COMMITS" ]; then
+            echo "No commits found."
+            exit 0
+          else
+            echo "$COMMITS"
+          fi
 
           # Filtere Commits, die mit `#` beginnen
           CHANGES=$(echo "$COMMITS" | grep '^#' || true)
