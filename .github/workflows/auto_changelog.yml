@@ -13,13 +13,16 @@ jobs:
       - name: Checkout repository with full history
         uses: actions/checkout@v3
         with:
-          # Git-Historie und alle Branches auschecken
+          # Hole die komplette Historie
           fetch-depth: 0
 
-      # Hole die Basis- und Ziel-Branch-Informationen
-      - name: Fetch base branch
+      # Überprüfe die Verfügbarkeit des Basis-Branches
+      - name: Debug base branch
         run: |
+          echo "Base branch: ${{ github.base_ref }}"
+          git branch -a
           git fetch origin ${{ github.base_ref }}
+          git checkout ${{ github.base_ref }}
 
       # Commits mit `#` filtern
       - name: Get commits with `#`
@@ -52,5 +55,4 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add changelog.json
-          git commit -m "Update changelog.json with new changes"
-          git push
+        
