@@ -1,0 +1,41 @@
+name: Update Changelog
+
+on:
+  push:
+    branches:
+      - development
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  update-changelog:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Extract commits with #
+      id: extract_commits
+      run: |
+        commits=$(git log --pretty=format:"%s" --grep="^#")
+        echo "::set-output name=commits::$commits"
+
+    - name: Update changelog.json
+      run: |
+        echo "{" > changelog.json
+        echo "  \"changelog\": [" >> changelog.json
+        echo "${{ steps.extract_commits.outputs.commits }}" | sed 's/^#//g' | sed 's/^/    "/' | sed 's/$/",/' >> changelog.json
+        echo "  ]" >> changelog.json
+        echo "}" >> changelog.json
+
+    - name: Commit changes
+      run: |
+        git config --local user.name "github-actions[bot]"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git add changelog.json
+        git commit -m "Update changelog.json"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
