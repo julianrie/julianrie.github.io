@@ -31,12 +31,7 @@ jobs:
           
           # Debug: Zeige die gefundenen Commits
           echo "Commits found:"
-          if [ -z "$COMMITS" ]; then
-            echo "No commits found."
-            exit 0
-          else
-            echo "$COMMITS"
-          fi
+          echo "$COMMITS"
 
           # Filtere Commits, die mit `#` beginnen
           CHANGES=$(echo "$COMMITS" | grep '^#' || true)
@@ -71,6 +66,11 @@ jobs:
             while IFS= read -r line; do
               echo "$line" | jq -R -s -c '{ "commit": . }' >> new_changes.json
             done < filtered_commits.txt
+            
+            # Überprüfe den Inhalt von new_changes.json vor dem Zusammenführen
+            echo "New changes to be added:"
+            cat new_changes.json
+
             jq -s '.[0] + .[1]' changelog.json new_changes.json > updated_changelog.json
             mv updated_changelog.json changelog.json
             echo "Updated changelog.json:"
