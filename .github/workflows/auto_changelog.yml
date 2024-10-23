@@ -19,15 +19,15 @@ jobs:
       - name: Fetch base branch
         run: |
           echo "Base branch: ${{ github.base_ref }}"
-          git fetch origin ${{ github.base_ref }}
-          git checkout ${{ github.base_ref }}
+          git fetch origin ${{ github.base_ref }} || { echo "Failed to fetch base branch"; exit 1; }
+          git checkout ${{ github.base_ref }} || { echo "Failed to checkout base branch"; exit 1; }
 
       # Commits mit `#` filtern
       - name: Get commits with `#`
         id: get_commits
         run: |
           echo "Fetching commits between origin/${{ github.base_ref }} and HEAD"
-          COMMITS=$(git log origin/${{ github.base_ref }}..HEAD --oneline)
+          COMMITS=$(git log origin/${{ github.base_ref }}..HEAD --oneline) || { echo "Failed to fetch commits"; exit 1; }
           
           # Debug: Zeige die gefundenen Commits
           echo "Commits found:"
@@ -48,14 +48,14 @@ jobs:
           echo "commits=1" >> $GITHUB_ENV  # setze eine Umgebungsvariable
 
           # Speichere die gefilterten Commits in einer Datei
-          echo "$CHANGES" > filtered_commits.txt
+          echo "$CHANGES" > filtered_commits.txt || { echo "Failed to write filtered commits to file"; exit 1; }
 
       # Falls changelog.json nicht existiert, erstelle die Datei
       - name: Create changelog.json if it does not exist
         run: |
           if [ ! -f changelog.json ]; then
             echo "Creating changelog.json"
-            echo "[]" > changelog.json
+            echo "[]" > changelog.json || { echo "Failed to create changelog.json"; exit 1; }
           fi
 
       # Füge neue Änderungen zur changelog.json hinzu
@@ -64,17 +64,17 @@ jobs:
           if [ "$commits" -eq 1 ]; then  # prüfe die Umgebungsvariable
             echo "Appending new changes to changelog.json"
             while IFS= read -r line; do
-              echo "$line" | jq -R -s -c '{ "commit": . }' >> new_changes.json
+              echo "$line" | jq -R -s -c '{ "commit": . }' >> new_changes.json || { echo "Failed to write to new_changes.json"; exit 1; }
             done < filtered_commits.txt
-            
+
             # Überprüfe den Inhalt von new_changes.json vor dem Zusammenführen
             echo "New changes to be added:"
-            cat new_changes.json
+            cat new_changes.json || { echo "Failed to read new_changes.json"; exit 1; }
 
-            jq -s '.[0] + .[1]' changelog.json new_changes.json > updated_changelog.json
-            mv updated_changelog.json changelog.json
+            jq -s '.[0] + .[1]' changelog.json new_changes.json > updated_changelog.json || { echo "Failed to merge JSON files"; exit 1; }
+            mv updated_changelog.json changelog.json || { echo "Failed to rename updated_changelog.json"; exit 1; }
             echo "Updated changelog.json:"
-            cat changelog.json
+            cat changelog.json || { echo "Failed to read updated changelog.json"; exit 1; }
           else
             echo "No commits to add to changelog.json."
           fi
@@ -84,6 +84,6 @@ jobs:
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git add changelog.json
-          git commit -m "Update changelog.json with new changes"
-          git push
+          git add changelog.json || { echo "Failed to add changelog.json"; exit 1; }
+          git commit -m "Update changelog.json with new changes" || { echo "Failed to commit changes"; exit 1; }
+          git push || { echo "Failed to push changes"; exit 1; }
