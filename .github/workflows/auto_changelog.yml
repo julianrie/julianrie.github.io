@@ -13,14 +13,12 @@ jobs:
       - name: Checkout repository with full history
         uses: actions/checkout@v3
         with:
-          # Hole die komplette Historie
           fetch-depth: 0
 
       # Überprüfe die Verfügbarkeit des Basis-Branches
-      - name: Debug base branch
+      - name: Fetch base branch
         run: |
           echo "Base branch: ${{ github.base_ref }}"
-          git branch -a
           git fetch origin ${{ github.base_ref }}
           git checkout ${{ github.base_ref }}
 
@@ -28,10 +26,15 @@ jobs:
       - name: Get commits with `#`
         run: |
           # Hole die Commits im Pull Request (vom base Branch bis zum aktuellen Branch)
+          echo "Fetching commits between origin/${{ github.base_ref }} and HEAD"
           COMMITS=$(git log origin/${{ github.base_ref }}..HEAD --oneline)
+          echo "Commits found:"
+          echo "$COMMITS"
 
-          # Filtere Commits, die mit `#` beginnen, und unterdrücke Fehler, falls keine Commits gefunden werden
+          # Filtere Commits, die mit `#` beginnen
           CHANGES=$(echo "$COMMITS" | grep '^#' || true)
+          echo "Filtered commits with '#':"
+          echo "$CHANGES"
 
           # Falls keine Commits gefunden werden, beende den Prozess
           if [ -z "$CHANGES" ]; then
@@ -39,15 +42,24 @@ jobs:
             exit 0
           fi
 
-          # Falls changelog.json nicht existiert, erstelle die Datei
+      # Falls changelog.json nicht existiert, erstelle die Datei
+      - name: Create changelog.json if it does not exist
+        run: |
           if [ ! -f changelog.json ]; then
+            echo "Creating changelog.json"
             echo "[]" > changelog.json
           fi
+          cat changelog.json
 
-          # Füge neue Änderungen zur changelog.json hinzu
+      # Füge neue Änderungen zur changelog.json hinzu
+      - name: Update changelog.json with new changes
+        run: |
+          echo "Appending new changes to changelog.json"
           echo "$CHANGES" | jq -R -s -c 'split("\n")[:-1] | map({"commit": .})' > new_changes.json
           jq -s '.[0] + .[1]' changelog.json new_changes.json > updated_changelog.json
           mv updated_changelog.json changelog.json
+          echo "Updated changelog.json:"
+          cat changelog.json
 
       # Änderungen an changelog.json commiten und pushen
       - name: Commit changes
@@ -55,4 +67,5 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add changelog.json
-        
+          git commit -m "Update changelog.json with new changes"
+          git push
