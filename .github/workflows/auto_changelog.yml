@@ -45,9 +45,9 @@ jobs:
           fi
 
           # Speichern der gefilterten Commits als Umgebungsvariable
-          # Hier werden die Commits in das gewünschte Format umgewandelt
           JSON_CHANGES=$(echo "$CHANGES" | jq -R -s -c 'split("\n")[:-1] | map({"commit": .})')
           echo "changes=$JSON_CHANGES" >> $GITHUB_ENV
+          echo "Changes JSON: $JSON_CHANGES"  # Debugging-Zeile
 
       # Falls changelog.json nicht existiert, erstelle die Datei
       - name: Create changelog.json if it does not exist
@@ -61,11 +61,12 @@ jobs:
       - name: Update changelog.json with new changes
         run: |
           echo "Appending new changes to changelog.json"
-          if [ "${{ env.changes }}" != "[]" ]; then
-            echo "${{ env.changes }}" > new_changes.json
-            jq -s '.[0] + .[1]' changelog.json new_changes.json > updated_changelog.json
-            mv updated_changelog.json changelog.json
-          fi
+          echo "${{ env.changes }}" > new_changes.json
+          echo "New changes JSON: $(cat new_changes.json)"  # Debugging-Zeile
+          jq -s '.[0] + .[1]' changelog.json new_changes.json > updated_changelog.json
+          mv updated_changelog.json changelog.json
+          echo "Updated changelog.json:"
+          cat changelog.json
 
       # Änderungen an changelog.json commiten und pushen
       - name: Commit changes
