@@ -40,12 +40,14 @@ jobs:
           # Falls keine Commits gefunden werden, beende den Prozess
           if [ -z "$CHANGES" ]; then
             echo "No commits with '#' found."
+            echo "changes=[]" >> $GITHUB_ENV
             exit 0
           fi
 
           # Speichern der gefilterten Commits als Umgebungsvariable
           # Hier werden die Commits in das gewünschte Format umgewandelt
-          echo "changes=$(echo "$CHANGES" | jq -R -s -c 'split("\n")[:-1] | map({"commit": .})')" >> $GITHUB_ENV
+          JSON_CHANGES=$(echo "$CHANGES" | jq -R -s -c 'split("\n")[:-1] | map({"commit": .})')
+          echo "changes=$JSON_CHANGES" >> $GITHUB_ENV
 
       # Falls changelog.json nicht existiert, erstelle die Datei
       - name: Create changelog.json if it does not exist
@@ -54,17 +56,16 @@ jobs:
             echo "Creating changelog.json"
             echo "[]" > changelog.json
           fi
-          cat changelog.json
 
       # Füge neue Änderungen zur changelog.json hinzu
       - name: Update changelog.json with new changes
         run: |
           echo "Appending new changes to changelog.json"
-          echo "${{ env.changes }}" > new_changes.json
-          jq -s '.[0] + .[1]' changelog.json new_changes.json > updated_changelog.json
-          mv updated_changelog.json changelog.json
-          echo "Updated changelog.json:"
-          cat changelog.json
+          if [ "${{ env.changes }}" != "[]" ]; then
+            echo "${{ env.changes }}" > new_changes.json
+            jq -s '.[0] + .[1]' changelog.json new_changes.json > updated_changelog.json
+            mv updated_changelog.json changelog.json
+          fi
 
       # Änderungen an changelog.json commiten und pushen
       - name: Commit changes
@@ -72,5 +73,5 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add changelog.json
-          git commit -m "Update changelog.json with new changes"
+          git commit -m "Update changelog.json with new changes" || echo "No changes to commit"
           git push
