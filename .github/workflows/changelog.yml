@@ -17,13 +17,13 @@ jobs:
       uses: mikepenz/release-changelog-builder-action@v3
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        configuration: "configuration.json"  # Optional, can be configured
+        mode: "COMMIT"  # Setze den Modus auf 'COMMIT', um alle Commits zu erfassen
 
     - name: Output changelog
       run: |
         echo "Changelog content:"
         echo "${{ steps.build_changelog.outputs.changelog }}"
-        
+
     - name: Save changelog to file
       run: |
         echo "${{ steps.build_changelog.outputs.changelog }}" >> CHANGELOG.md
