@@ -52,11 +52,14 @@ jobs:
       - name: Show CHANGELOG.md
         run: cat CHANGELOG.md
 
-      # Änderungen an CHANGELOG.md commiten und pushen
-      - name: Commit changes
+      # Überprüfe, ob Änderungen vorhanden sind und committe nur, wenn es Änderungen gibt
+      - name: Commit changes if there are any
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add CHANGELOG.md
-          git commit -m "Update CHANGELOG.md with new changes"
-          git push origin ${{ github.head_ref }}
+          if [ -n "$(git status --porcelain)" ]; then
+            git config --global user.name "github-actions"
+            git config --global user.email "github-actions@github.com"
+            git add CHANGELOG.md
+            git commit -m "Update CHANGELOG.md with new changes"
+            git push origin ${{ github.head_ref }}
+          else
+            echo "No changes to commit."
