@@ -1,30 +1,29 @@
-# GitHub Actions for Changelog Generation
-
 name: Generate Changelog
 
 on:
   pull_request:
-    branches:
-      - master
+    types: [merged]
+    branches: [master]
 
 jobs:
-  changelog:
+  generate-changelog:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Generate Changelog
+      - uses: actions/checkout@v3
+      - name: Generate changelog
         run: |
-          echo "# Changelog" > changelog.md
+          # Hole die Commit-Informationen des gemergten PRs (hier musst du die API-Aufrufe anpassen)
+          commits=$(curl -s https://api.github.com/repos/<owner>/<repo>/pulls/$PULL_REQUEST_NUMBER/commits)
+          # Parse die JSON-Antwort und extrahiere die benötigten Informationen
+          # ...
+          # Füge die Commit-Informationen im Markdown-Format zur changelog.md hinzu
+          echo "# Changelog" >> changelog.md
+          for commit in $(echo $commits | jq -r '.[] | "\(.commit.sha) - \(.commit.message)"'); do
+            echo "$commit" >> changelog.md
           echo "" >> changelog.md
-          git log --oneline origin/development..HEAD >> changelog.md
-
-      - name: Commit and push changelog
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          done
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
           git add changelog.md
-          git commit -m "Update changelog for pull request"
+          git commit -m "Update changelog"
           git push
