@@ -28,26 +28,23 @@ jobs:
         run: |
           # Hole die Commits im Pull Request (vom base Branch bis zum aktuellen Branch)
           echo "Fetching commits between origin/${{ github.base_ref }} and HEAD"
-          COMMITS=$(git log origin/${{ github.base_ref }}..HEAD --oneline)
+          COMMITS=$(git log origin/${{ github.base_ref }}..HEAD --pretty=format:"%H %s")
           echo "Commits found:"
           echo "$COMMITS"
 
           # Filtere Commits, die mit `#` beginnen
-          CHANGES=$(echo "$COMMITS" | grep '^#' || true)
+          CHANGES=$(echo "$COMMITS" | grep ' #')
           echo "Filtered commits with '#':"
           echo "$CHANGES"
 
           # Falls keine Commits gefunden werden, beende den Prozess
           if [ -z "$CHANGES" ]; then
             echo "No commits with '#' found."
-            echo "changes=[]" >> $GITHUB_ENV
             exit 0
           fi
 
           # Speichern der gefilterten Commits als Umgebungsvariable
-          JSON_CHANGES=$(echo "$CHANGES" | jq -R -s -c 'split("\n")[:-1] | map({"commit": .})')
-          echo "changes=$JSON_CHANGES" >> $GITHUB_ENV
-          echo "Changes JSON: $JSON_CHANGES"  # Debugging-Zeile
+          echo "changes=$CHANGES" >> $GITHUB_ENV
 
       # Falls changelog.json nicht existiert, erstelle die Datei
       - name: Create changelog.json if it does not exist
@@ -56,15 +53,17 @@ jobs:
             echo "Creating changelog.json"
             echo "[]" > changelog.json
           fi
+          cat changelog.json
 
       # Füge neue Änderungen zur changelog.json hinzu
       - name: Update changelog.json with new changes
         run: |
           echo "Appending new changes to changelog.json"
-          echo "${{ env.changes }}" > new_changes.json
-          echo "New changes JSON: $(cat new_changes.json)"  # Debugging-Zeile
-          jq -s '.[0] + .[1]' changelog.json new_changes.json > updated_changelog.json
-          mv updated_changelog.json changelog.json
+          echo "${{ env.changes }}" | while read -r line; do
+            COMMIT_HASH=$(echo "$line" | awk '{print $1}')
+            COMMIT_MESSAGE=$(echo "$line" | cut -d' ' -f2-)
+            jq --arg hash "$COMMIT_HASH" --arg message "$COMMIT_MESSAGE" '. += [{"commit": $hash, "message": $message}]' changelog.json > temp.json && mv temp.json changelog.json
+          done
           echo "Updated changelog.json:"
           cat changelog.json
 
@@ -74,5 +73,5 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add changelog.json
-          git commit -m "Update changelog.json with new changes" || echo "No changes to commit"
+          git commit -m "Update changelog.json with new changes"
           git push
