@@ -30,8 +30,8 @@ jobs:
           echo "Commits found:"
           echo "$COMMITS"
 
-          # Filtere Commits, die mit `#` beginnen
-          CHANGES=$(echo "$COMMITS" | grep '^#' || true)
+          # Filtere Commits, die mit `#` beginnen, und erlaube Leerzeichen davor
+          CHANGES=$(echo "$COMMITS" | grep '^\s*#' || true)
           echo "Filtered commits with '#':"
           echo "$CHANGES"
 
@@ -46,8 +46,8 @@ jobs:
           echo "$CHANGES" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-      # Überprüfe den Inhalt der Umgebungsvariable 'changes'
-      - name: Debug - Check changes environment variable
+      # Überprüfe den Inhalt der Umgebungsvariable 'CHANGES'
+      - name: Debug - Check CHANGES environment variable
         run: |
           echo "Debugging - Checking filtered commits:"
           echo "${{ env.CHANGES }}"
