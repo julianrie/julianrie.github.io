@@ -32,7 +32,7 @@ jobs:
           echo "Commits found:"
           echo "$COMMITS"
 
-          # Filtere Commits, die mit `#` beginnen
+          # Filtere Commits, die mit `#` beginnen und formatieren sie
           CHANGES=$(echo "$COMMITS" | grep '^#' || true)
           echo "Filtered commits with '#':"
           echo "$CHANGES"
@@ -43,14 +43,13 @@ jobs:
             exit 0
           fi
 
-          # Speichern der gefilterten Commits als Umgebungsvariable
-          echo "CHANGES='$CHANGES'" >> $GITHUB_ENV
+          # Formatieren der Commits für die CHANGELOG.md
+          CHANGELOG_ENTRIES=$(echo "$CHANGES" | sed -E 's/^# (.*)/- \1/')
 
-      # Überprüfe den Inhalt der Umgebungsvariable 'changes'
-      - name: Debug - Check changes environment variable
-        run: |
-          echo "Debugging - Checking filtered commits:"
-          echo "${{ env.CHANGES }}"
+          # Speichern der formatierten Einträge als Umgebungsvariable
+          echo "CHANGELOG_ENTRIES<<EOF" >> $GITHUB_ENV
+          echo "$CHANGELOG_ENTRIES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       # Falls CHANGELOG.md nicht existiert, erstelle die Datei
       - name: Create CHANGELOG.md if it does not exist
@@ -59,13 +58,12 @@ jobs:
             echo "Creating CHANGELOG.md"
             echo "# Changelog" > CHANGELOG.md
           fi
-          cat CHANGELOG.md
 
       # Füge neue Änderungen zur CHANGELOG.md hinzu
       - name: Update CHANGELOG.md with new changes
         run: |
           echo "Appending new changes to CHANGELOG.md"
-          echo "${{ env.CHANGES }}" >> CHANGELOG.md
+          echo "${{ env.CHANGELOG_ENTRIES }}" >> CHANGELOG.md
           echo "Updated CHANGELOG.md:"
           cat CHANGELOG.md
 
@@ -75,5 +73,5 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add CHANGELOG.md
-          git commit -m "Update CHANGELOG.md with new changes"
+          git commit -m "docs: update CHANGELOG.md for PR #${{ github.event.number }} [skip ci]"
           git push
