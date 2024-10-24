@@ -15,20 +15,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Überprüfe die Verfügbarkeit des Basis-Branches
-      - name: Fetch base branch
-        run: |
-          echo "Base branch: ${{ github.base_ref }}"
-          git fetch origin ${{ github.base_ref }}
-          git checkout ${{ github.base_ref }}
-
       # Commits mit `#` filtern
       - name: Get commits with `#`
         id: get_commits
         run: |
           # Hole die Commits im Pull Request (vom base Branch bis zum aktuellen Branch)
-          echo "Fetching commits between origin/${{ github.base_ref }} and HEAD"
-          COMMITS=$(git log origin/${{ github.base_ref }}..HEAD --oneline)
+          echo "Fetching commits between ${{ github.event.pull_request.base.sha }} and ${{ github.sha }}"
+          COMMITS=$(git log ${{ github.event.pull_request.base.sha }}..${{ github.sha }} --oneline)
           echo "Commits found:"
           echo "$COMMITS"
 
@@ -44,7 +37,9 @@ jobs:
           fi
 
           # Speichern der gefilterten Commits als Umgebungsvariable
-          echo "CHANGES='$CHANGES'" >> $GITHUB_ENV
+          echo "CHANGES<<EOF" >> $GITHUB_ENV
+          echo "$CHANGES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       # Überprüfe den Inhalt der Umgebungsvariable 'changes'
       - name: Debug - Check changes environment variable
