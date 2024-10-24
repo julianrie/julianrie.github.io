@@ -9,6 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Install @octokit/rest
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          cache: 'npm'
+      - name: Install Dependencies
+        run: npm install @octokit/rest
       - name: Generate Changelog
         uses: actions/github-script@v6
         with:
@@ -18,15 +25,7 @@ jobs:
             const pr = context.payload.pull_request;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const base = pr.base.ref; // Sollte jetzt "master" sein
-            const head = pr.head.ref; // Sollte "development" sein
+            const base = pr.base.ref;
+            const head = pr.head.ref;
 
-            // ... (Rest des Codes)
-            await github.rest.repos.createOrUpdateFileContents({
-              owner,
-              repo,
-              path: 'CHANGELOG.md',
-              message: 'Update changelog',
-              content: Buffer.from(changelog).toString('base64'),
-              sha: 'master', // Schreibe in den master Branch
-            });
+            // ... rest of your script
