@@ -15,14 +15,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Verwende die Conventional Changelog Action
-      - name: Generate CHANGELOG.md
-        id: changelog
-        uses: conventional-changelog/standard-version@9.3.2
+      # Installiere Node.js und release-it
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          skip: true  # Setze dies auf true, wenn du die Version nicht erhöhen möchtest
-          token: ${{ secrets.GITHUB_TOKEN }}
-        
+          node-version: '14'  # oder eine andere Version, die du verwenden möchtest
+
+      - name: Install release-it
+        run: |
+          npm install -g release-it
+
+      # Generiere CHANGELOG.md
+      - name: Generate CHANGELOG.md
+        run: |
+          release-it --no-ci --dry-run # Führe release-it im "dry-run" Modus aus, um zu testen
+
       # Commit und Push der Änderungen an CHANGELOG.md
       - name: Commit changes
         run: |
