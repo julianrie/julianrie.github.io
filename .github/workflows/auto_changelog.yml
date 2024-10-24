@@ -9,72 +9,65 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Repository auschecken, inklusive aller Branch-Referenzen
       - name: Checkout repository with full history
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # Versuch, die nächste Version zu bekommen, aber nicht abbrechen, wenn kein Tag vorhanden ist
-      - name: Get next version (optional)
-        id: semver
-        uses: ietf-tools/semver-action@v1
-        continue-on-error: true
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
-
-      # Fallback: Standardversion setzen, wenn kein Tag gefunden wurde
-      - name: Set default version if no tags
+      # Überprüfe die Verfügbarkeit des Basis-Branches
+      - name: Fetch base branch
         run: |
-          if [ -z "${{ steps.semver.outputs.next }}" ]; then
-            echo "No tags found, setting default version"
-            echo "::set-output name=next::v1.0.0"
-          fi
+          echo "Base branch: ${{ github.base_ref }}"
+          git fetch origin ${{ github.base_ref }}
+          git checkout ${{ github.base_ref }}
 
-      # Filter commits with `+` from current PR
-      - name: Get commits with `+`
+      # Commits mit `#` filtern
+      - name: Get commits with `#`
         id: get_commits
         run: |
+          # Hole die Commits im Pull Request (vom base Branch bis zum aktuellen Branch)
+          echo "Fetching commits between origin/${{ github.base_ref }} and HEAD"
           COMMITS=$(git log origin/${{ github.base_ref }}..HEAD --oneline)
-          echo "All Commits:"
+          echo "Commits found:"
           echo "$COMMITS"
-          
-          # Filter commits starting with `+`
-          CHANGES=$(echo "$COMMITS" | grep '^+')
-          
+
+          # Filtere Commits, die mit `#` beginnen
+          CHANGES=$(echo "$COMMITS" | grep '^#' || true)
+          echo "Filtered commits with '#':"
+          echo "$CHANGES"
+
+          # Falls keine Commits gefunden werden, beende den Prozess
           if [ -z "$CHANGES" ]; then
-            echo "No commits with '+' found."
+            echo "No commits with '#' found."
             exit 0
-          else
-            echo "Filtered commits with '+':"
-            echo "$CHANGES"
-            echo "changes=$CHANGES" >> $GITHUB_ENV
           fi
 
-      # Create changelog.json if it does not exist
-      - name: Create changelog.json if it does not exist
+          # Speichern der gefilterten Commits als Umgebungsvariable
+          echo "changes=$CHANGES" >> $GITHUB_ENV
+
+      # Falls CHANGELOG.md nicht existiert, erstelle die Datei
+      - name: Create CHANGELOG.md if it does not exist
         run: |
-          if [ ! -f changelog.json ]; then
-            echo "Creating changelog.json"
-            echo "[]" > changelog.json
+          if [ ! -f CHANGELOG.md ]; then
+            echo "Creating CHANGELOG.md"
+            echo "# Changelog" > CHANGELOG.md
           fi
-          cat changelog.json
+          cat CHANGELOG.md
 
-      # Append new changes to changelog.json
-      - name: Update changelog.json with new changes
+      # Füge neue Änderungen zur CHANGELOG.md hinzu
+      - name: Update CHANGELOG.md with new changes
         run: |
-          echo "Appending changes to changelog.json"
-          echo "${{ env.changes }}" | jq -R -s -c 'split("\n") | map(select(. != "")) | map({"commit": .})' > new_changes.json
-          jq -s '.[0] + .[1]' changelog.json new_changes.json > updated_changelog.json
-          mv updated_changelog.json changelog.json
-          echo "Updated changelog.json:"
-          cat changelog.json
+          echo "Appending new changes to CHANGELOG.md"
+          echo "${{ env.changes }}" >> CHANGELOG.md
+          echo "Updated CHANGELOG.md:"
+          cat CHANGELOG.md
 
-      # Commit changelog.json to the repository
+      # Änderungen an CHANGELOG.md commiten und pushen
       - name: Commit changes
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git add changelog.json
-          git commit -m "Update changelog.json with new changes"
+          git add CHANGELOG.md
+          git commit -m "Update CHANGELOG.md with new changes"
           git push
