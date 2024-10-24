@@ -1,43 +1,30 @@
-name: Update Changelog
+# GitHub Actions for Changelog Generation
+
+name: Generate Changelog
 
 on:
-  push:
+  pull_request:
     branches:
-      - master  # Trigger bei Push in den master-Branch
+      - master
 
 jobs:
-  update-changelog:
+  changelog:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Set up Git
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
 
       - name: Generate Changelog
         run: |
-          # Prüfe, ob die changelog.md existiert und erstelle sie, wenn nicht
-          if [ ! -f changelog.md ]; then
-            echo "# Changelog" > changelog.md
-          fi
-          
-          echo "## $(date '+%Y-%m-%d')" >> changelog.md
-          echo "### Merged changes from development to master:" >> changelog.md
+          echo "# Changelog" > changelog.md
+          echo "" >> changelog.md
+          git log --oneline origin/development..HEAD >> changelog.md
 
-          # Füge die Merge-Commits aus development hinzu
-          git log --merges --pretty=format:'* %h %s (%an, %ar)' --abbrev-commit origin/master..origin/development >> changelog.md
-          
-          # Falls es keine neuen Commits gibt, mache nichts
-          if ! git diff --quiet changelog.md; then
-            git add changelog.md
-            git commit -m "Update changelog for merge from development to master"
-          else
-            echo "No changes to commit in changelog.md"
-          fi
-
-      - name: Push Changes
-        run: git push origin master  # Push die Änderungen zurück in den master-Branch
+      - name: Commit and push changelog
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add changelog.md
+          git commit -m "Update changelog for pull request"
+          git push
