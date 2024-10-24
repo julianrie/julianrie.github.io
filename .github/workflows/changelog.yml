@@ -37,10 +37,16 @@ jobs:
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           
+          # Überprüfen, ob CHANGELOG.md geändert wurde
           if [ -f CHANGELOG.md ]; then
             git add CHANGELOG.md
-            git commit -m "Update CHANGELOG.md [skip ci]"
-            git push origin HEAD:master
+            # Überprüfen, ob Änderungen vorhanden sind
+            if ! git diff-index --quiet HEAD --; then
+              git commit -m "Update CHANGELOG.md [skip ci]"
+              git push origin HEAD:master
+            else
+              echo "No changes to CHANGELOG.md, skipping commit."
+            fi
           else
             echo "CHANGELOG.md does not exist, skipping commit."
           fi
