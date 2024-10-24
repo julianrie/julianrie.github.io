@@ -9,13 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install @octokit/rest
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16'
-          cache: 'npm'
-      - name: Install Dependencies
-        run: npm install @octokit/rest
+      - name: Install Dependencies (if lock file is missing, remove this step)
+        # This step might not be necessary depending on your project setup
+        # run: npm install  # Or yarn install if you use yarn
       - name: Generate Changelog
         uses: actions/github-script@v6
         with:
