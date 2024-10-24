@@ -34,6 +34,10 @@ jobs:
           echo "Filtered commits with '#':"
           echo "$CHANGES"
 
+          # Debugging: Zeige die gefilterten Änderungen an
+          echo "Debugging: Filtered commits to be added to CHANGELOG.md:"
+          echo "$CHANGES"
+
           # Falls keine Commits gefunden werden, beende den Prozess
           if [ -z "$CHANGES" ]; then
             echo "No commits with '#' found."
@@ -45,12 +49,18 @@ jobs:
             echo "# Changelog" > CHANGELOG.md
           fi
           
+          # Debugging: Zeige den Inhalt der aktuellen CHANGELOG.md an
+          echo "Debugging: Current content of CHANGELOG.md before appending:"
+          cat CHANGELOG.md
+
           # Füge gefilterte Commits zur CHANGELOG.md hinzu
           echo "$CHANGES" >> CHANGELOG.md
 
       # Überprüfe die Datei nach den Änderungen
       - name: Show CHANGELOG.md
-        run: cat CHANGELOG.md
+        run: |
+          echo "Debugging: Updated content of CHANGELOG.md after appending:"
+          cat CHANGELOG.md
 
       # Überprüfe, ob Änderungen vorhanden sind und committe nur, wenn es Änderungen gibt
       - name: Commit changes if there are any
@@ -63,4 +73,4 @@ jobs:
             git push origin ${{ github.head_ref }}
           else
             echo "No changes to commit."
-          fi  # Hier das fi hinzufügen
+          fi
