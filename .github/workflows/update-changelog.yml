@@ -14,32 +14,19 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const { paginate } = require('@octokit/rest');
             const pr = context.payload.pull_request;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const base = pr.base.ref;
-            const head = pr.head.ref;
+            const base = pr.base.ref; // Sollte jetzt "master" sein
+            const head = pr.head.ref; // Sollte "development" sein
 
-            const commits = context.github.paginate.iterator(
-              context.github.repos.compareCommits,
-              {
-                owner,
-                repo,
-                base,
-                head,
-              }
-            );
-
-            let changelog = "# Changelog\n\n";
-            for await (const commit of commits) {
-              changelog += `* ${commit.data.sha}: ${commit.data.commit.message}\n`;
-            }
-
+            // ... (Rest des Codes)
             await github.rest.repos.createOrUpdateFileContents({
               owner,
               repo,
               path: 'CHANGELOG.md',
               message: 'Update changelog',
               content: Buffer.from(changelog).toString('base64'),
-              sha: 'main', // Ersetze 'main' durch den SHA des aktuellen CHANGELOG.md, falls vorhanden
+              sha: 'master', // Schreibe in den master Branch
             });
