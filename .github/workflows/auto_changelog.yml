@@ -14,12 +14,22 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Versuch, die nächste Version zu bekommen, aber nicht abbrechen, wenn kein Tag vorhanden ist
       - name: Get next version (optional)
         id: semver
         uses: ietf-tools/semver-action@v1
+        continue-on-error: true
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: main
+
+      # Fallback: Standardversion setzen, wenn kein Tag gefunden wurde
+      - name: Set default version if no tags
+        run: |
+          if [ -z "${{ steps.semver.outputs.next }}" ]; then
+            echo "No tags found, setting default version"
+            echo "::set-output name=next::v1.0.0"
+          fi
 
       # Filter commits with `+` from current PR
       - name: Get commits with `+`
