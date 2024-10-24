@@ -9,44 +9,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Repository auschecken, inklusive aller Branch-Referenzen
       - name: Checkout repository with full history
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # Überprüfe die Verfügbarkeit des Basis-Branches
-      - name: Fetch base branch
-        run: |
-          echo "Base branch: ${{ github.base_ref }}"
-          git fetch origin ${{ github.base_ref }}
-          git checkout ${{ github.base_ref }}
+      - name: Get next version (optional)
+        id: semver
+        uses: ietf-tools/semver-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
 
-      # Commits mit `+` filtern
+      # Filter commits with `+` from current PR
       - name: Get commits with `+`
         id: get_commits
         run: |
-          # Hole die Commits im Pull Request (vom base Branch bis zum aktuellen Branch)
-          echo "Fetching commits between origin/${{ github.base_ref }} and HEAD"
           COMMITS=$(git log origin/${{ github.base_ref }}..HEAD --oneline)
-          echo "Commits found:"
+          echo "All Commits:"
           echo "$COMMITS"
-
-          # Filtere Commits, die mit `+` beginnen
-          CHANGES=$(echo "$COMMITS" | grep '^+' || true)
-          echo "Filtered commits with '+':"
-          echo "$CHANGES"
-
-          # Falls keine Commits gefunden werden, beende den Prozess
+          
+          # Filter commits starting with `+`
+          CHANGES=$(echo "$COMMITS" | grep '^+')
+          
           if [ -z "$CHANGES" ]; then
             echo "No commits with '+' found."
             exit 0
+          else
+            echo "Filtered commits with '+':"
+            echo "$CHANGES"
+            echo "changes=$CHANGES" >> $GITHUB_ENV
           fi
 
-          # Speichern der gefilterten Commits als Umgebungsvariable
-          echo "changes=$CHANGES" >> $GITHUB_ENV
-
-      # Falls changelog.json nicht existiert, erstelle die Datei
+      # Create changelog.json if it does not exist
       - name: Create changelog.json if it does not exist
         run: |
           if [ ! -f changelog.json ]; then
@@ -55,18 +50,17 @@ jobs:
           fi
           cat changelog.json
 
-      # Füge neue Änderungen zur changelog.json hinzu
+      # Append new changes to changelog.json
       - name: Update changelog.json with new changes
         run: |
-          echo "Appending new changes to changelog.json"
-          # Jede Commit-Zeile einzeln verarbeiten und in JSON-Format umwandeln
-          echo "${{ env.changes }}" | jq -R -s -c 'split("\n")[:-1] | map(select(length > 0) | {"commit": .})' > new_changes.json
+          echo "Appending changes to changelog.json"
+          echo "${{ env.changes }}" | jq -R -s -c 'split("\n") | map(select(. != "")) | map({"commit": .})' > new_changes.json
           jq -s '.[0] + .[1]' changelog.json new_changes.json > updated_changelog.json
           mv updated_changelog.json changelog.json
           echo "Updated changelog.json:"
           cat changelog.json
 
-      # Änderungen an changelog.json commiten und pushen
+      # Commit changelog.json to the repository
       - name: Commit changes
         run: |
           git config --global user.name "github-actions"
