@@ -17,6 +17,7 @@ jobs:
 
       # Commits mit `#` filtern und CHANGELOG.md aktualisieren
       - name: Get commits with `#` and update CHANGELOG.md
+        id: update_changelog
         run: |
           echo "Fetching commits"
           COMMITS=$(git log origin/master..HEAD --oneline)
@@ -24,6 +25,7 @@ jobs:
 
           if [ -z "$CHANGES" ]; then
             echo "No commits with '#' found."
+            echo "::set-output name=changes::No changes to update"
             exit 0
           fi
 
@@ -31,16 +33,19 @@ jobs:
           echo "# Changelog" > CHANGELOG.md
           echo "$CHANGES" | sed 's/^#/- /' >> CHANGELOG.md
 
+          echo "::set-output name=changes::$(cat CHANGELOG.md)" # Ausgabe für den nächsten Schritt
+
       # Commit und Push der Änderungen an CHANGELOG.md
       - name: Commit changes
+        if: steps.update_changelog.outputs.changes != 'No changes to update'
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add CHANGELOG.md
           git commit -m "Update CHANGELOG.md [skip ci]"
-          git push
+          git push origin HEAD:master # Push in den master Branch
 
-      # Deployment zu GitHub Pages (master Branch)
+      # Deployment zu GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
