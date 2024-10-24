@@ -1,7 +1,7 @@
 name: Auto Changelog
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize]
 
 jobs:
@@ -22,7 +22,6 @@ jobs:
 
       # Commits mit `#` filtern
       - name: Get commits with `#`
-        id: get_commits
         run: |
           # Hole die Commits im Pull Request (vom base Branch bis zum aktuellen Branch)
           echo "Fetching commits between ${{ github.event.pull_request.base.sha }} and ${{ github.sha }}"
@@ -41,33 +40,17 @@ jobs:
             exit 0
           fi
 
-          # Speichern der gefilterten Commits als Umgebungsvariable
-          echo "CHANGES<<EOF" >> $GITHUB_ENV
-          echo "$CHANGES" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      # Überprüfe den Inhalt der Umgebungsvariable 'CHANGES'
-      - name: Debug - Check CHANGES environment variable
-        run: |
-          echo "Debugging - Checking filtered commits:"
-          echo "${{ env.CHANGES }}"
-
-      # Falls CHANGELOG.md nicht existiert, erstelle die Datei
-      - name: Create CHANGELOG.md if it does not exist
-        run: |
+          # Schreibe die Änderungen direkt in die CHANGELOG.md-Datei
           if [ ! -f CHANGELOG.md ]; then
-            echo "Creating CHANGELOG.md"
             echo "# Changelog" > CHANGELOG.md
           fi
-          cat CHANGELOG.md
+          
+          # Füge gefilterte Commits zur CHANGELOG.md hinzu
+          echo "$CHANGES" >> CHANGELOG.md
 
-      # Füge neue Änderungen zur CHANGELOG.md hinzu
-      - name: Update CHANGELOG.md with new changes
-        run: |
-          echo "Appending new changes to CHANGELOG.md"
-          echo "${{ env.CHANGES }}" >> CHANGELOG.md
-          echo "Updated CHANGELOG.md:"
-          cat CHANGELOG.md
+      # Überprüfe die Datei nach den Änderungen
+      - name: Show CHANGELOG.md
+        run: cat CHANGELOG.md
 
       # Änderungen an CHANGELOG.md commiten und pushen
       - name: Commit changes
