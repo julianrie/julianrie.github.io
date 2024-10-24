@@ -22,24 +22,24 @@ jobs:
           git fetch origin ${{ github.base_ref }}
           git checkout ${{ github.base_ref }}
 
-      # Commits mit `#` filtern
-      - name: Get commits with `#`
+      # Commits mit `+` filtern
+      - name: Get commits with `+`
         id: get_commits
         run: |
           # Hole die Commits im Pull Request (vom base Branch bis zum aktuellen Branch)
           echo "Fetching commits between origin/${{ github.base_ref }} and HEAD"
-          COMMITS=$(git log origin/${{ github.base_ref }}..HEAD --pretty=format:"%H %s")
+          COMMITS=$(git log origin/${{ github.base_ref }}..HEAD --oneline)
           echo "Commits found:"
           echo "$COMMITS"
 
-          # Filtere Commits, die mit `#` beginnen
-          CHANGES=$(echo "$COMMITS" | grep ' #')
-          echo "Filtered commits with '#':"
+          # Filtere Commits, die mit `+` beginnen
+          CHANGES=$(echo "$COMMITS" | grep '^+' || true)
+          echo "Filtered commits with '+':"
           echo "$CHANGES"
 
           # Falls keine Commits gefunden werden, beende den Prozess
           if [ -z "$CHANGES" ]; then
-            echo "No commits with '#' found."
+            echo "No commits with '+' found."
             exit 0
           fi
 
@@ -59,11 +59,10 @@ jobs:
       - name: Update changelog.json with new changes
         run: |
           echo "Appending new changes to changelog.json"
-          echo "${{ env.changes }}" | while read -r line; do
-            COMMIT_HASH=$(echo "$line" | awk '{print $1}')
-            COMMIT_MESSAGE=$(echo "$line" | cut -d' ' -f2-)
-            jq --arg hash "$COMMIT_HASH" --arg message "$COMMIT_MESSAGE" '. += [{"commit": $hash, "message": $message}]' changelog.json > temp.json && mv temp.json changelog.json
-          done
+          # Jede Commit-Zeile einzeln verarbeiten und in JSON-Format umwandeln
+          echo "${{ env.changes }}" | jq -R -s -c 'split("\n")[:-1] | map(select(length > 0) | {"commit": .})' > new_changes.json
+          jq -s '.[0] + .[1]' changelog.json new_changes.json > updated_changelog.json
+          mv updated_changelog.json changelog.json
           echo "Updated changelog.json:"
           cat changelog.json
 
