@@ -1,76 +1,34 @@
-name: Auto Changelog
+name: Generate Changelog
 
 on:
-  pull_request_target:
-    types: [opened, synchronize]
+  pull_request:
+    types: [closed]
 
 jobs:
-  generate_changelog:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      # Repository auschecken, inklusive aller Branch-Referenzen
-      - name: Checkout repository with full history
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      # Checkout des aktuellen PR-Branches
-      - name: Checkout the current PR branch
-        run: |
-          git checkout ${{ github.head_ref }}
+    - name: Generate changelog
+      id: build_changelog
+      uses: mikepenz/release-changelog-builder-action@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        configuration: "configuration.json"  # Optional, can be configured
 
-      # Commits mit `#` filtern
-      - name: Get commits with `#`
-        run: |
-          # Hole die Commits im Pull Request (vom base Branch bis zum aktuellen Branch)
-          echo "Fetching commits between ${{ github.event.pull_request.base.sha }} and ${{ github.sha }}"
-          COMMITS=$(git log ${{ github.event.pull_request.base.sha }}..${{ github.sha }} --oneline)
-          echo "Commits found:"
-          echo "$COMMITS"
-
-          # Filtere Commits, die mit `#` beginnen, und erlaube Leerzeichen davor
-          CHANGES=$(echo "$COMMITS" | grep '^\s*#' || true)
-          echo "Filtered commits with '#':"
-          echo "$CHANGES"
-
-          # Debugging: Zeige die gefilterten Änderungen an
-          echo "Debugging: Filtered commits to be added to CHANGELOG.md:"
-          echo "$CHANGES"
-
-          # Falls keine Commits gefunden werden, beende den Prozess
-          if [ -z "$CHANGES" ]; then
-            echo "No commits with '#' found."
-            exit 0
-          fi
-
-          # Schreibe die Änderungen direkt in die CHANGELOG.md-Datei
-          if [ ! -f CHANGELOG.md ]; then
-            echo "# Changelog" > CHANGELOG.md
-          fi
-          
-          # Debugging: Zeige den Inhalt der aktuellen CHANGELOG.md an
-          echo "Debugging: Current content of CHANGELOG.md before appending:"
-          cat CHANGELOG.md
-
-          # Füge gefilterte Commits zur CHANGELOG.md hinzu
-          echo "$CHANGES" >> CHANGELOG.md
-
-      # Überprüfe die Datei nach den Änderungen
-      - name: Show CHANGELOG.md
-        run: |
-          echo "Debugging: Updated content of CHANGELOG.md after appending:"
-          cat CHANGELOG.md
-
-      # Überprüfe, ob Änderungen vorhanden sind und committe nur, wenn es Änderungen gibt
-      - name: Commit changes if there are any
-        run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            git config --global user.name "github-actions"
-            git config --global user.email "github-actions@github.com"
-            git add CHANGELOG.md
-            git commit -m "Update CHANGELOG.md with new changes"
-            git push origin ${{ github.head_ref }}
-          else
-            echo "No changes to commit."
-          fi
+    - name: Output changelog
+      run: |
+        echo "Changelog content:"
+        echo "${{ steps.build_changelog.outputs.changelog }}"
+        
+    - name: Save changelog to file
+      run: |
+        echo "${{ steps.build_changelog.outputs.changelog }}" >> CHANGELOG.md
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+        git add CHANGELOG.md
+        git commit -m "Update CHANGELOG.md"
+        git push
