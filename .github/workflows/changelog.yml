@@ -1,4 +1,4 @@
-name: Auto Changelog
+name: Auto Changelog and Deploy
 
 on:
   pull_request:
@@ -9,65 +9,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Repository auschecken, inklusive aller Branch-Referenzen
-      - name: Checkout repository with full history
+      # Checkout des Repositories
+      - name: Checkout repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      # Überprüfe die Verfügbarkeit des Basis-Branches
-      - name: Fetch base branch
+      # Commits mit `#` filtern und CHANGELOG.md aktualisieren
+      - name: Get commits with `#` and update CHANGELOG.md
+        id: update_changelog
         run: |
-          echo "Base branch: ${{ github.base_ref }}"
-          git fetch origin ${{ github.base_ref }}
-          git checkout ${{ github.base_ref }}
-
-      # Commits mit `#` filtern
-      - name: Get commits with `#`
-        id: get_commits
-        run: |
-          # Hole die Commits im Pull Request (vom base Branch bis zum aktuellen Branch)
-          echo "Fetching commits between origin/${{ github.base_ref }} and HEAD"
-          COMMITS=$(git log origin/${{ github.base_ref }}..HEAD --oneline)
-          echo "Commits found:"
-          echo "$COMMITS"
-
-          # Filtere Commits, die mit `#` beginnen
+          echo "Fetching commits"
+          COMMITS=$(git log origin/master..HEAD --oneline)
           CHANGES=$(echo "$COMMITS" | grep '^#' || true)
-          echo "Filtered commits with '#':"
-          echo "$CHANGES"
 
-          # Falls keine Commits gefunden werden, beende den Prozess
           if [ -z "$CHANGES" ]; then
             echo "No commits with '#' found."
             exit 0
           fi
 
-          # Speichern der gefilterten Commits als Umgebungsvariable
-          echo "changes=$CHANGES" >> $GITHUB_ENV
+          echo "Updating CHANGELOG.md"
+          echo "# Changelog" > CHANGELOG.md
+          echo "$CHANGES" | sed 's/^#/- /' >> CHANGELOG.md
 
-      # Falls CHANGELOG.md nicht existiert, erstelle die Datei
-      - name: Create CHANGELOG.md if it does not exist
-        run: |
-          if [ ! -f CHANGELOG.md ]; then
-            echo "Creating CHANGELOG.md"
-            echo "# Changelog" > CHANGELOG.md
-          fi
-          cat CHANGELOG.md
-
-      # Füge neue Änderungen zur CHANGELOG.md hinzu
-      - name: Update CHANGELOG.md with new changes
-        run: |
-          echo "Appending new changes to CHANGELOG.md"
-          echo "${{ env.changes }}" >> CHANGELOG.md
-          echo "Updated CHANGELOG.md:"
-          cat CHANGELOG.md
-
-      # Änderungen an CHANGELOG.md commiten und pushen
+      # Commit und Push der Änderungen an CHANGELOG.md
       - name: Commit changes
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
           git add CHANGELOG.md
-          git commit -m "Update CHANGELOG.md with new changes"
-          git push
+          git commit -m "Update CHANGELOG.md [skip ci]"
+          git push origin HEAD:master # Push in den master Branch
+
+      # Deployment zu GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./  # Stelle sicher, dass CHANGELOG.md im Hauptverzeichnis ist
+          publish_branch: master  # Pushen in den master Branch
+          publish_dir: .  # Nutze das aktuelle Verzeichnis
