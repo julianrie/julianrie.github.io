@@ -2,28 +2,44 @@ name: Generate Changelog
 
 on:
   pull_request:
-    types: [merged]
-    branches: [master]
+    branches: [ master ]
 
 jobs:
   generate-changelog:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Generate changelog
-        run: |
-          # Hole die Commit-Informationen des gemergten PRs (hier musst du die API-Aufrufe anpassen)
-          commits=$(curl -s https://api.github.com/repos/<owner>/<repo>/pulls/$PULL_REQUEST_NUMBER/commits)
-          # Parse die JSON-Antwort und extrahiere die benötigten Informationen
-          # ...
-          # Füge die Commit-Informationen im Markdown-Format zur changelog.md hinzu
-          echo "# Changelog" >> changelog.md
-          for commit in $(echo $commits | jq -r '.[] | "\(.commit.sha) - \(.commit.message)"'); do
-            echo "$commit" >> changelog.md
-          echo "" >> changelog.md
-          done
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add changelog.md
-          git commit -m "Update changelog"
-          git push
+      - name: Generate Changelog
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const base = pr.base.ref;
+            const head = pr.head.ref;
+
+            const commits = context.github.paginate.iterator(
+              context.github.repos.compareCommits,
+              {
+                owner,
+                repo,
+                base,
+                head,
+              }
+            );
+
+            let changelog = "# Changelog\n\n";
+            for await (const commit of commits) {
+              changelog += `* ${commit.data.sha}: ${commit.data.commit.message}\n`;
+            }
+
+            await github.rest.repos.createOrUpdateFileContents({
+              owner,
+              repo,
+              path: 'CHANGELOG.md',
+              message: 'Update changelog',
+              content: Buffer.from(changelog).toString('base64'),
+              sha: 'main', // Ersetze 'main' durch den SHA des aktuellen CHANGELOG.md, falls vorhanden
+            });
