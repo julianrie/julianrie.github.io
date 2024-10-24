@@ -15,12 +15,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Installiere Node.js und release-it
+      # Installiere Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '14'  # oder eine andere Version, die du verwenden möchtest
+          node-version: '16'  # Aktualisiere auf eine unterstützte Version
 
+      # Installiere release-it
       - name: Install release-it
         run: |
           npm install -g release-it
@@ -28,7 +29,7 @@ jobs:
       # Generiere CHANGELOG.md
       - name: Generate CHANGELOG.md
         run: |
-          release-it --no-ci --dry-run # Führe release-it im "dry-run" Modus aus, um zu testen
+          release-it --no-ci --dry-run  # Führe release-it im "dry-run" Modus aus, um zu testen
 
       # Commit und Push der Änderungen an CHANGELOG.md
       - name: Commit changes
