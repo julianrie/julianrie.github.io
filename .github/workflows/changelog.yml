@@ -48,4 +48,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./  # Stelle sicher, dass CHANGELOG.md im Hauptverzeichnis ist
           publish_branch: master  # Pushen in den master Branch
-          publish_dir: .  # Nutze das aktuelle Verzeichnis
+          
