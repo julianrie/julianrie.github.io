@@ -63,3 +63,4 @@ jobs:
             git push origin ${{ github.head_ref }}
           else
             echo "No changes to commit."
+          fi  # Hier das fi hinzufügen
