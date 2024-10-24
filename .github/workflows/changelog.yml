@@ -1,4 +1,4 @@
-name: Auto Changelog and Deploy
+name: Generate Changelog and Deploy
 
 on:
   pull_request:
@@ -15,37 +15,32 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Commits mit `#` filtern und CHANGELOG.md aktualisieren
-      - name: Get commits with `#` and update CHANGELOG.md
-        id: update_changelog
-        run: |
-          echo "Fetching commits"
-          COMMITS=$(git log origin/master..HEAD --oneline)
-          CHANGES=$(echo "$COMMITS" | grep '^#' || true)
-
-          if [ -z "$CHANGES" ]; then
-            echo "No commits with '#' found."
-            exit 0
-          fi
-
-          echo "Updating CHANGELOG.md"
-          echo "# Changelog" > CHANGELOG.md
-          echo "$CHANGES" | sed 's/^#/- /' >> CHANGELOG.md
-
+      # Verwende die Conventional Changelog Action
+      - name: Generate CHANGELOG.md
+        id: changelog
+        uses: conventional-changelog/standard-version@9.3.2
+        with:
+          skip: true  # Setze dies auf true, wenn du die Version nicht erhöhen möchtest
+          token: ${{ secrets.GITHUB_TOKEN }}
+        
       # Commit und Push der Änderungen an CHANGELOG.md
       - name: Commit changes
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git add CHANGELOG.md
-          git commit -m "Update CHANGELOG.md [skip ci]"
-          git push origin HEAD:master # Push in den master Branch
+          
+          if [ -f CHANGELOG.md ]; then
+            git add CHANGELOG.md
+            git commit -m "Update CHANGELOG.md [skip ci]"
+            git push origin HEAD:master
+          else
+            echo "CHANGELOG.md does not exist, skipping commit."
+          fi
 
       # Deployment zu GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./  # Stelle sicher, dass CHANGELOG.md im Hauptverzeichnis ist
+          publish_dir: .  # Stelle sicher, dass CHANGELOG.md im Hauptverzeichnis ist
           publish_branch: master  # Pushen in den master Branch
-          
