@@ -15,6 +15,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Checkout des aktuellen PR-Branches
+      - name: Checkout the current PR branch
+        run: |
+          git checkout ${{ github.head_ref }}
+
       # Commits mit `#` filtern
       - name: Get commits with `#`
         id: get_commits
@@ -71,4 +76,4 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git add CHANGELOG.md
           git commit -m "Update CHANGELOG.md with new changes"
-          git push
+          git push origin ${{ github.head_ref }}
