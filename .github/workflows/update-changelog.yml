@@ -9,19 +9,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install Dependencies (if lock file is missing, remove this step)
-        # This step might not be necessary depending on your project setup
-        # run: npm install  # Or yarn install if you use yarn
       - name: Generate Changelog
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { paginate } = require('@octokit/rest');
-            const pr = context.payload.pull_request;
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const base = pr.base.ref;
-            const head = pr.head.ref;
-
-            // ... rest of your script
+        run: node index.js
