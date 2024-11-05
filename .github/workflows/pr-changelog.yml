@@ -2,7 +2,7 @@ name: Generate Changelog for Pull Request
 
 on:
   pull_request:
-    branches: [ master ]  # Workflow wird ausgelöst, wenn ein PR auf den 'master' Branch gerichtet ist
+    branches: [ master ]  # Workflow wird nur für PRs auf den 'master' Branch ausgeführt
     types: [opened, synchronize]
 
 jobs:
@@ -12,14 +12,16 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4  # Repository wird ausgecheckt, um auf Commits zuzugreifen
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Holt das gesamte Repository mit allen Branches
 
     - name: Generate Changelog
       run: |
         # Generiere die Changelog-Datei für die Commits in diesem Pull Request
         echo "## Changelog for PR #${{ github.event.pull_request.number }}" > CHANGELOG.md
         echo "" >> CHANGELOG.md
-        git log origin/master..HEAD --oneline >> CHANGELOG.md  # Log der PR-Commits
+        git log origin/master..HEAD --oneline >> CHANGELOG.md  # Listet die PR-Commits
 
     - name: Display Changelog (for debugging)
       run: cat CHANGELOG.md  # Zeigt die Changelog-Datei an, um den Inhalt zu prüfen
