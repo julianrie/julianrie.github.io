@@ -11,46 +11,46 @@ jobs:
     name: Generate Changelog for PR Commits
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Holt das gesamte Repository mit allen Branches
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Holt das gesamte Repository mit allen Branches
 
-    - name: Display Git Status
-      run: git status  # Zeigt den aktuellen Status des Repositories an
+      - name: Display Git Status
+        run: git status  # Zeigt den aktuellen Status des Repositories an
 
-    - name: Show available branches
-      run: git branch -a  # Listet alle verfügbaren Branches
+      - name: Show available branches
+        run: git branch -a  # Listet alle verfügbaren Branches
 
-    - name: Show commit log
-      run: git log --oneline  # Zeigt den gesamten Commit-Verlauf an
+      - name: Show commit log
+        run: git log --oneline  # Zeigt den gesamten Commit-Verlauf an
 
-    - name: Check current branch
-      run: echo "Current branch is: $(git rev-parse --abbrev-ref HEAD)"  # Zeigt den aktuellen Branch an
+      - name: Check current branch
+        run: echo "Current branch is: $(git rev-parse --abbrev-ref HEAD)"  # Zeigt den aktuellen Branch an
 
-    - name: Generate Changelog
-      run: |
-        echo "## Changelog for PR #${{ github.event.pull_request.number }}" > CHANGELOG.md
-        echo "" >> CHANGELOG.md
-        # Holen der Commits zwischen dem aktuellen Branch und dem Ziel-Branch des PRs
-        echo "Fetching commits from $(git merge-base origin/master HEAD) to HEAD..." >> CHANGELOG.md
-        git log $(git merge-base origin/master HEAD)..HEAD --oneline >> CHANGELOG.md  # Listet die PR-Commits auf
+      - name: Generate Changelog
+        run: |
+          echo "## Changelog for PR #${{ github.event.pull_request.number }}" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          # Holen der Commits zwischen dem aktuellen Branch und dem Ziel-Branch des PRs
+          echo "Fetching commits from $(git merge-base origin/master HEAD) to HEAD..." >> CHANGELOG.md
+          git log $(git merge-base origin/master HEAD)..HEAD --oneline >> CHANGELOG.md  # Listet die PR-Commits auf
 
-    - name: Display Changelog (for debugging)
-      run: |
-        if [ -s CHANGELOG.md ]; then
-          cat CHANGELOG.md  # Zeigt die Changelog-Datei an, wenn sie nicht leer ist
-        else
-          echo "CHANGELOG.md is empty!"  # Gibt eine Nachricht aus, wenn die Datei leer ist
-        fi
+      - name: Display Changelog (for debugging)
+        run: |
+          if [ -s CHANGELOG.md ]; then
+            cat CHANGELOG.md  # Zeigt die Changelog-Datei an, wenn sie nicht leer ist
+          else
+            echo "CHANGELOG.md is empty!"  # Gibt eine Nachricht aus, wenn die Datei leer ist
+          fi
 
-    - name: Comment on Pull Request with Changelog
-      uses: marocchino/sticky-pull-request-comment@v2
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        header: changelog
-        message: |
-          ## Changelog
-          ```markdown
-          $(cat CHANGELOG.md)
-          ```
+      - name: Comment on Pull Request with Changelog
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          header: changelog
+          message: |
+            ## Changelog
+            ```markdown
+            $(cat CHANGELOG.md)
+            ```
