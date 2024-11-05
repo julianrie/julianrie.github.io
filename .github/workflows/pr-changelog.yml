@@ -16,11 +16,21 @@ jobs:
       with:
         fetch-depth: 0  # Holt das gesamte Repository mit allen Branches
 
+    - name: Display Git Status
+      run: git status  # Zeigt den aktuellen Status des Repositories an
+
+    - name: Show available branches
+      run: git branch -a  # Listet alle verfügbaren Branches
+
+    - name: Show commit log
+      run: git log --oneline  # Zeigt den gesamten Commit-Verlauf an
+
     - name: Generate Changelog
       run: |
         # Generiere die Changelog-Datei für die Commits in diesem Pull Request
         echo "## Changelog for PR #${{ github.event.pull_request.number }}" > CHANGELOG.md
         echo "" >> CHANGELOG.md
+        # Listen die PR-Commits auf
         git log origin/master..HEAD --oneline >> CHANGELOG.md  # Listet die PR-Commits
 
     - name: Display Changelog (for debugging)
