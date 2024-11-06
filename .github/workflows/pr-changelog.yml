@@ -20,15 +20,27 @@ jobs:
       run: |
         # Aktuelles Datum im Format DD.MM.YYYY
         DATE=$(date +"%d.%m.%Y")
+
+        # Erstellen oder leeren der temporären neuen Datei
         echo "$DATE" > new_changelog.md
         echo "" >> new_changelog.md
-        # Nur die Commit-Titel ohne Merge-Commits hinzufügen
-        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges >> new_changelog.md
+
+        # Nur die Commit-Titel ohne Merge-Commits und nur Commits, die mit # beginnen
+        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges | grep "^#" >> new_changelog.md
         echo "" >> new_changelog.md
-        # Bestehende CHANGELOG.md Datei anhängen, falls vorhanden
+
+        # Wenn die Datei CHANGELOG.md existiert
         if test -f CHANGELOG.md; then
-          cat CHANGELOG.md >> new_changelog.md
+          # Prüfe, ob das aktuelle Datum bereits in der Changelog-Datei enthalten ist
+          if ! grep -q "^$DATE" CHANGELOG.md; then
+            # Falls nicht, füge den alten Inhalt an
+            cat CHANGELOG.md >> new_changelog.md
+          else
+            # Nur neue Einträge ohne erneute Datumsangabe hinzufügen
+            tail -n +2 CHANGELOG.md >> new_changelog.md
+          fi
         fi
+
         # Umbenennen zu CHANGELOG.md
         mv new_changelog.md CHANGELOG.md
 
