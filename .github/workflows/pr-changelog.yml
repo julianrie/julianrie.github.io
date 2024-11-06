@@ -22,8 +22,8 @@ jobs:
         DATE=$(date +"%d.%m.%Y")
         echo "$DATE" > new_changelog.md
         echo "" >> new_changelog.md
-        # Nur die Commit-Titel ohne Merge-Commits hinzufügen
-        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges >> new_changelog.md
+        # Nur die Commit-Titel ohne Merge-Commits und nur Commits, die mit # beginnen
+        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges | grep "^#" >> new_changelog.md
         echo "" >> new_changelog.md
         # Bestehende CHANGELOG.md Datei anhängen, falls vorhanden
         if test -f CHANGELOG.md; then
