@@ -1,5 +1,4 @@
-## Changelog for PR #75 - 2024-11-06
+## Changelog for PR #76 - 2024-11-06
 
-- Merge 1bb8d1517e73eb5d49d0f2935ee4faa299366882 into 7bc9ec14055541a576fe0fa60bff294c82270480
-- Update Daten test.json
-- Update test.json
+- Merge 77337b7bc103249c78cdec312c728735314eb7a1 into 9eaf97b756e1f9d43584f4790d23b450d897f2c5
+- ich habs geändert
