@@ -16,6 +16,11 @@ jobs:
       with:
         fetch-depth: 0  # Holt das gesamte Repository mit allen Branches
 
+    - name: Set Git User Info
+      run: |
+        git config --global user.name "GitHub Actions Bot"
+        git config --global user.email "actions@github.com"
+
     - name: Generate Changelog Entry
       run: |
         # Datum nur einmal setzen
@@ -44,8 +49,7 @@ jobs:
         echo "" >> CHANGELOG.md
         
         # Bestehende CHANGELOG.md Datei an die neue anhängen
-        # Keine Duplikate durch mehrfaches Hinzufügen des Datums
-        git checkout ${{ github.event.pull_request.base.ref }}
+        git pull origin master  # Holt die neuesten Änderungen vom Remote-Branch
         git add CHANGELOG.md
         git commit -m "Update changelog for PR #${{ github.event.pull_request.number }}" || echo "No changes to commit"
         git push origin HEAD:${{ github.head_ref }}
