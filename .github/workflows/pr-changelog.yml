@@ -18,11 +18,13 @@ jobs:
 
     - name: Generate Changelog Entry
       run: |
-        # Datum wird nur einmal am Anfang gesetzt
+        # Datum nur einmal setzen
         DATE=$(date +"%d.%m.%Y")
         
-        # Leere Changelog-Datei erstellen
-        echo "" > new_changelog.md
+        # Leere Datei erstellen (wenn sie nicht existiert)
+        if [ ! -f CHANGELOG.md ]; then
+          touch CHANGELOG.md
+        fi
         
         # Alle gefilterten Commits mit # sammeln (die mit # beginnen, ohne Merge-Commits)
         COMMITS=$(git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges | grep "^#")
@@ -33,26 +35,17 @@ jobs:
           exit 0
         fi
 
-        # Wenn gefilterte Commits vorhanden sind, das Datum hinzufügen und die Commits
-        echo "$DATE" >> new_changelog.md
-        echo "" >> new_changelog.md
-        echo "$COMMITS" >> new_changelog.md
-        echo "" >> new_changelog.md
+        # Datum einmal in die Changelog-Datei einfügen
+        echo "$DATE" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
         
-        # Bestehende CHANGELOG.md Datei anhängen, falls vorhanden
-        if test -f CHANGELOG.md; then
-          cat CHANGELOG.md >> new_changelog.md
-        fi
+        # Gefilterte Commits (mit #) in die Datei einfügen
+        echo "$COMMITS" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
         
-        # Die neue changelog.md Datei in die Haupt-CHANGELOG.md umbenennen
-        mv new_changelog.md CHANGELOG.md
-
-    - name: Commit and Push Changelog
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        git config --global user.name "GitHub Actions Bot"
-        git config --global user.email "actions@github.com"
+        # Bestehende CHANGELOG.md Datei an die neue anhängen
+        # Keine Duplikate durch mehrfaches Hinzufügen des Datums
+        git checkout ${{ github.event.pull_request.base.ref }}
         git add CHANGELOG.md
         git commit -m "Update changelog for PR #${{ github.event.pull_request.number }}" || echo "No changes to commit"
         git push origin HEAD:${{ github.head_ref }}
