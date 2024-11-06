@@ -2,7 +2,7 @@ name: Generate JSON Changelog for Pull Request
 
 on:
   pull_request:
-    branches: [ master ]  # Workflow wird nur für PRs auf den 'master' Branch ausgeführt
+    branches: [ master ]
     types: [opened, synchronize]
 
 jobs:
@@ -14,24 +14,29 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Holt das gesamte Repository mit allen Branches
+        fetch-depth: 0
 
     - name: Generate JSON Changelog Entry
       run: |
         # Aktuelles Datum im Format DD.MM.YYYY
         DATE=$(date +"%d.%m.%Y")
         
-        # Beginne JSON-Datei und füge Datum ein
+        # Beginne JSON-Datei mit Datum und Commits-Array
         echo "{ \"date\": \"$DATE\", \"commits\": [" > new_changelog.json
 
-        # Füge die Commit-Titel (nur mit # beginnende) als JSON-Array-Elemente hinzu
-        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"\"%s\"" --no-merges | grep "^#" | sed 's/.*/{ \"message\": & },/' >> new_changelog.json
+        # Holen und Filtern der Commits, die mit # beginnen
+        COMMIT_MESSAGES=$(git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges | grep "^#")
 
-        # Schließe JSON-Struktur und entferne letztes Komma, falls nötig
-        sed -i '$ s/,$//' new_changelog.json
+        # Überprüfen, ob Commits gefunden wurden, und JSON erstellen
+        if [ -n "$COMMIT_MESSAGES" ]; then
+          echo "$COMMIT_MESSAGES" | sed 's/^/# /; s/.*/{ \"message\": \"&\" },/' >> new_changelog.json
+          sed -i '$ s/,$//' new_changelog.json  # Entfernt das letzte Komma
+        fi
+
+        # Schließen des JSON-Arrays
         echo "]}" >> new_changelog.json
 
-        # Bestehende CHANGELOG.json anfügen, falls vorhanden
+        # Mergen mit bestehender CHANGELOG.json, falls vorhanden
         if test -f CHANGELOG.json; then
           jq -s '.[0] * .[1]' new_changelog.json CHANGELOG.json > merged_changelog.json
           mv merged_changelog.json CHANGELOG.json
@@ -46,7 +51,7 @@ jobs:
         git config --global user.name "GitHub Actions Bot"
         git config --global user.email "actions@github.com"
         git add CHANGELOG.json
-        git commit -m "Update changelog for PR #${{ github.event.pull_request.number }}" || echo "No changes to commit"
+        git commit -m "Update JSON changelog for PR #${{ github.event.pull_request.number }}" || echo "No changes to commit"
         git push origin HEAD:${{ github.head_ref }}
 
     - name: Comment on Pull Request with JSON Changelog
