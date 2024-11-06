@@ -21,7 +21,7 @@ jobs:
         # Aktuelles Datum im Format DD.MM.YYYY
         DATE=$(date +"%d.%m.%Y")
         
-        # Leere Datei erstellen oder mit dem Datum beginnen
+        # Leere Datei oder nur Datum hinzufügen
         echo "$DATE" > new_changelog.md
         echo "" >> new_changelog.md
         
@@ -31,6 +31,7 @@ jobs:
         
         # Bestehende CHANGELOG.md Datei anhängen, falls vorhanden
         if test -f CHANGELOG.md; then
+          echo "" >> new_changelog.md
           cat CHANGELOG.md >> new_changelog.md
         fi
         
