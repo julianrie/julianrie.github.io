@@ -18,32 +18,30 @@ jobs:
 
     - name: Generate Changelog Entry
       run: |
-        # Debugging: Überprüfen des Datumsbefehl-Ausgangs
-        echo "Checking date format..."
+        # Erstelle die leere Datei und füge das Datum nur einmal am Anfang ein
         DATE=$(date +"%d.%m.%Y")
-        echo "Date is: $DATE"
         
-        # Beginne mit einer leeren Changelog-Datei oder überspringe den Schritt, wenn sie bereits existiert
-        echo "" > new_changelog.md
-        
-        # Füge das Datum hinzu, aber nur einmal, bevor die gefilterten Commits kommen
-        echo "$DATE" >> new_changelog.md
+        # Füge das Datum zu Beginn der Changelog-Datei hinzu
+        echo "$DATE" > new_changelog.md
         echo "" >> new_changelog.md
         
-        # Nur Commits hinzufügen, die mit # beginnen, und Merge-Commits ausschließen
-        echo "Adding filtered commits..."
+        # Füge nur die Commits hinzu, die mit # beginnen und keine Merge-Commits enthalten
         git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges | grep "^#" >> new_changelog.md
         
+        # Wenn keine passenden Commits gefunden wurden, die mit # beginnen, dann keine Änderung der Datei
+        if [ ! -s new_changelog.md ]; then
+          echo "No filtered commits found, skipping changelog update."
+          exit 0
+        fi
+
         echo "" >> new_changelog.md
         
         # Bestehende CHANGELOG.md Datei anhängen, falls vorhanden
-        echo "Appending to existing CHANGELOG.md (if exists)..."
         if test -f CHANGELOG.md; then
           cat CHANGELOG.md >> new_changelog.md
         fi
         
         # Umbenennen zu CHANGELOG.md
-        echo "Renaming and moving to CHANGELOG.md..."
         mv new_changelog.md CHANGELOG.md
 
     - name: Commit and Push Changelog
