@@ -20,29 +20,15 @@ jobs:
       run: |
         # Aktuelles Datum im Format DD.MM.YYYY
         DATE=$(date +"%d.%m.%Y")
-
-        # Wenn die Datei CHANGELOG.md existiert, holen wir den Inhalt und fügen ihn später an
-        if test -f CHANGELOG.md; then
-          # Holt das Datum aus der existierenden Datei, um zu prüfen, ob es schon vorhanden ist
-          LAST_DATE=$(grep -oP "^\d{2}\.\d{2}\.\d{4}" CHANGELOG.md | head -n 1)
-          cat CHANGELOG.md > new_changelog.md
-        fi
-
-        # Wenn das Datum der Changelog-Datei nicht mit dem aktuellen Datum übereinstimmt, füge es hinzu
-        if [ "$DATE" != "$LAST_DATE" ]; then
-          echo "$DATE" >> new_changelog.md
-          echo "" >> new_changelog.md
-        fi
-
-        # Nur Commit-Titel mit '#' am Anfang und ohne Merge-Commits hinzufügen
-        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges | grep "^#" >> new_changelog.md
+        echo "$DATE" > new_changelog.md
         echo "" >> new_changelog.md
-
-        # Bestehende CHANGELOG.md Datei am Ende anhängen, falls vorhanden
+        # Nur die Commit-Titel ohne Merge-Commits hinzufügen
+        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges >> new_changelog.md
+        echo "" >> new_changelog.md
+        # Bestehende CHANGELOG.md Datei anhängen, falls vorhanden
         if test -f CHANGELOG.md; then
           cat CHANGELOG.md >> new_changelog.md
         fi
-
         # Umbenennen zu CHANGELOG.md
         mv new_changelog.md CHANGELOG.md
 
