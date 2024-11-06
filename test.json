@@ -11,12 +11,12 @@
           "children": [
             {
               "id": 1,
-              "name": "Anna Mustermann ist nicht schlau",
+              "name": "Anna Mustermann ist auch schlau",
               "age": 5
             },
             {
               "id": 2,
-              "name": "Julian Mustermann ist schlau",
+              "name": "Julian Mustermann ist sehr schlau",
               "age": 3
             }
           ]

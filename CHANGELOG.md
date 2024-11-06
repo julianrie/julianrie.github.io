@@ -1,4 +1,5 @@
-## Changelog for PR #74
+## Changelog for PR #75 - 2024-11-06
 
-1b05562 Merge 30740d435d166fba6182c08133b279af3b79eb1a into 8247b70efbf7015b84611be69b4e8e5a4d0e46e1
-30740d4 Update test.json
+- Merge 1bb8d1517e73eb5d49d0f2935ee4faa299366882 into 7bc9ec14055541a576fe0fa60bff294c82270480
+- Update Daten test.json
+- Update test.json
