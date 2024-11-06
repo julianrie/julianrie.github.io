@@ -23,32 +23,31 @@ jobs:
 
     - name: Generate Changelog Entry
       run: |
-        # Datum nur einmal setzen
+        # Datum einmal im Format DD.MM.YYYY setzen
         DATE=$(date +"%d.%m.%Y")
         
-        # Leere Datei erstellen (wenn sie nicht existiert)
+        # Leere Datei erstellen (falls sie nicht existiert)
         if [ ! -f CHANGELOG.md ]; then
           touch CHANGELOG.md
         fi
         
         # Alle gefilterten Commits mit # sammeln (die mit # beginnen, ohne Merge-Commits)
         COMMITS=$(git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges | grep "^#")
-        
+
         # Überprüfen, ob es gefilterte Commits gibt
         if [ -z "$COMMITS" ]; then
           echo "No filtered commits found, skipping changelog update."
           exit 0
         fi
 
-        # Datum einmal in die Changelog-Datei einfügen
-        echo "$DATE" >> CHANGELOG.md
+        # Datum und die gefilterten Commits in die CHANGELOG.md einfügen
+        # Die Datei wird nicht überschrieben, sondern mit neuen Daten ergänzt
         echo "" >> CHANGELOG.md
-        
-        # Gefilterte Commits (mit #) in die Datei einfügen
-        echo "$COMMITS" >> CHANGELOG.md
+        echo "$DATE" >> CHANGELOG.md  # Datum einmalig hinzufügen
+        echo "$COMMITS" >> CHANGELOG.md  # Die gefilterten Commits hinzufügen
         echo "" >> CHANGELOG.md
-        
-        # Bestehende CHANGELOG.md Datei an die neue anhängen
+
+        # Änderungen in der CHANGELOG.md-Datei zum Commit hinzufügen
         git pull origin master  # Holt die neuesten Änderungen vom Remote-Branch
         git add CHANGELOG.md
         git commit -m "Update changelog for PR #${{ github.event.pull_request.number }}" || echo "No changes to commit"
