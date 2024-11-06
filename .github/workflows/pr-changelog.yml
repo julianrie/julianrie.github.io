@@ -16,39 +16,33 @@ jobs:
       with:
         fetch-depth: 0  # Holt das gesamte Repository mit allen Branches
 
-    - name: Set Git User Info
+    - name: Generate Changelog Entry
+      run: |
+        # Aktuelles Datum im Format DD.MM.YYYY
+        DATE=$(date +"%d.%m.%Y")
+        
+        # Leere Datei erstellen oder mit dem Datum beginnen
+        echo "$DATE" > new_changelog.md
+        echo "" >> new_changelog.md
+        
+        # Nur die Commit-Titel ohne Merge-Commits und nur Commits, die mit # beginnen
+        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges | grep "^#" >> new_changelog.md
+        echo "" >> new_changelog.md
+        
+        # Bestehende CHANGELOG.md Datei anhängen, falls vorhanden
+        if test -f CHANGELOG.md; then
+          cat CHANGELOG.md >> new_changelog.md
+        fi
+        
+        # Umbenennen zu CHANGELOG.md
+        mv new_changelog.md CHANGELOG.md
+
+    - name: Commit and Push Changelog
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --global user.name "GitHub Actions Bot"
         git config --global user.email "actions@github.com"
-
-    - name: Generate Changelog Entry
-      run: |
-        # Datum einmal im Format DD.MM.YYYY setzen
-        DATE=$(date +"%d.%m.%Y")
-        
-        # Leere Datei erstellen (falls sie nicht existiert)
-        if [ ! -f CHANGELOG.md ]; then
-          touch CHANGELOG.md
-        fi
-        
-        # Alle gefilterten Commits mit # sammeln (die mit # beginnen, ohne Merge-Commits)
-        COMMITS=$(git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges | grep "^#")
-
-        # Überprüfen, ob es gefilterte Commits gibt
-        if [ -z "$COMMITS" ]; then
-          echo "No filtered commits found, skipping changelog update."
-          exit 0
-        fi
-
-        # Datum und die gefilterten Commits in die CHANGELOG.md einfügen
-        # Die Datei wird nicht überschrieben, sondern mit neuen Daten ergänzt
-        echo "" >> CHANGELOG.md
-        echo "$DATE" >> CHANGELOG.md  # Datum einmalig hinzufügen
-        echo "$COMMITS" >> CHANGELOG.md  # Die gefilterten Commits hinzufügen
-        echo "" >> CHANGELOG.md
-
-        # Änderungen in der CHANGELOG.md-Datei zum Commit hinzufügen
-        git pull origin master  # Holt die neuesten Änderungen vom Remote-Branch
         git add CHANGELOG.md
         git commit -m "Update changelog for PR #${{ github.event.pull_request.number }}" || echo "No changes to commit"
         git push origin HEAD:${{ github.head_ref }}
