@@ -1,71 +1,61 @@
-name: Generate Changelog for Pull Request
+name: Generate JSON Changelog for Pull Request
 
 on:
   pull_request:
-    branches: [ master ]  # workflow master Branch
-    types: [opened, synchronize]  # workflow if PR opened or synchronized
+    branches: [ master ]  # Workflow wird nur für PRs auf den 'master' Branch ausgeführt
+    types: [opened, synchronize]
 
 jobs:
   generate_changelog:
-    runs-on: ubuntu-latest  
-    name: Generate Changelog for PR Commits  
+    runs-on: ubuntu-latest
+    name: Generate JSON Changelog for PR Commits
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4  # GitHub-Checkout-Action
+      uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # fetch the entire Repository with all branches
+        fetch-depth: 0  # Holt das gesamte Repository mit allen Branches
 
-    - name: Generate Changelog Entry
+    - name: Generate JSON Changelog Entry
       run: |
-        # current date in DD.MM.YYYY format
-        # saved date in variable
+        # Aktuelles Datum im Format DD.MM.YYYY
         DATE=$(date +"%d.%m.%Y")
-
-        # create or empty the temporary file
-        # write date + blank line in new file 
-        echo "$DATE" > new_changelog.md
-        echo "" >> new_changelog.md
-
-        # only commit title without merge-commits and only commits with an #
-        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges | grep "^#" >> new_changelog.md
         
-        # write blank line
-        echo "" >> new_changelog.md 
+        # Beginne JSON-Datei und füge Datum ein
+        echo "{ \"date\": \"$DATE\", \"commits\": [" > new_changelog.json
 
-        # check if the file exists
-        if test -f CHANGELOG.md; then  
-          # check if the date exists
-          if ! grep -q "^$DATE" CHANGELOG.md; then
-            # if not add the content to the end of the file 
-            cat CHANGELOG.md >> new_changelog.md
-          else
-            # if exists add only new content without date
-            # add all lines except the first one
-            tail -n +2 CHANGELOG.md >> new_changelog.md 
-          fi
+        # Füge die Commit-Titel (nur mit # beginnende) als JSON-Array-Elemente hinzu
+        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"\"%s\"" --no-merges | grep "^#" | sed 's/.*/{ \"message\": & },/' >> new_changelog.json
+
+        # Schließe JSON-Struktur und entferne letztes Komma, falls nötig
+        sed -i '$ s/,$//' new_changelog.json
+        echo "]}" >> new_changelog.json
+
+        # Bestehende CHANGELOG.json anfügen, falls vorhanden
+        if test -f CHANGELOG.json; then
+          jq -s '.[0] * .[1]' new_changelog.json CHANGELOG.json > merged_changelog.json
+          mv merged_changelog.json CHANGELOG.json
+        else
+          mv new_changelog.json CHANGELOG.json
         fi
 
-        # rename the temporary file to CHANGELOG.md
-        mv new_changelog.md CHANGELOG.md  
-
-    - name: Commit and Push Changelog
+    - name: Commit and Push JSON Changelog
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # github config
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        git config --global user.name "GitHub Actions Bot"  
-        git config --global user.email "actions@github.com"  
-        git add CHANGELOG.md  
+        git config --global user.name "GitHub Actions Bot"
+        git config --global user.email "actions@github.com"
+        git add CHANGELOG.json
         git commit -m "Update changelog for PR #${{ github.event.pull_request.number }}" || echo "No changes to commit"
-        git push origin HEAD:${{ github.head_ref }}  # Pusht changes to PR-branch
+        git push origin HEAD:${{ github.head_ref }}
 
-    - name: Comment on Pull Request with Changelog
-      uses: marocchino/sticky-pull-request-comment@v2  # GitHub Action for commits
+    - name: Comment on Pull Request with JSON Changelog
+      uses: marocchino/sticky-pull-request-comment@v2
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}  # access token for cmomment action
-        header: changelog 
+        token: ${{ secrets.GITHUB_TOKEN }}
+        header: changelog
         message: |
-          ## Changelog
-          ```markdown
-          ${{ env.changelog_content }}  # insert the comments of the changelog file as a comment
+          ## JSON Changelog
+          ```json
+          ${{ env.changelog_content }}
           ```
