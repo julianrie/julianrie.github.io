@@ -16,14 +16,21 @@ jobs:
       with:
         fetch-depth: 0  # Holt das gesamte Repository mit allen Branches
 
-    - name: Generate Changelog
+    - name: Generate Changelog Entry
       run: |
         # Aktuelles Datum in YYYY-MM-DD-Format
         DATE=$(date +"%Y-%m-%d")
-        echo "## Changelog for PR #${{ github.event.pull_request.number }} - $DATE" > CHANGELOG.md
-        echo "" >> CHANGELOG.md
+        echo "## Changelog for PR #${{ github.event.pull_request.number }} - $DATE" > new_changelog.md
+        echo "" >> new_changelog.md
         # Nur die Commit-Titel (ohne Merge-Details) hinzufügen
-        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"- %s" >> CHANGELOG.md
+        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"- %s" >> new_changelog.md
+        echo "" >> new_changelog.md
+        # Bestehende CHANGELOG.md Datei anhängen, falls vorhanden
+        if test -f CHANGELOG.md; then
+          cat CHANGELOG.md >> new_changelog.md
+        fi
+        # Umbenennen zu CHANGELOG.md
+        mv new_changelog.md CHANGELOG.md
 
     - name: Commit and Push Changelog
       env:
@@ -34,7 +41,7 @@ jobs:
         git add CHANGELOG.md
         git commit -m "Update changelog for PR #${{ github.event.pull_request.number }}" || echo "No changes to commit"
         git push origin HEAD:${{ github.head_ref }}
-      
+
     - name: Comment on Pull Request with Changelog
       uses: marocchino/sticky-pull-request-comment@v2
       with:
