@@ -18,9 +18,12 @@ jobs:
 
     - name: Generate Changelog
       run: |
-        echo "## Changelog for PR #${{ github.event.pull_request.number }}" > CHANGELOG.md
+        # Aktuelles Datum in YYYY-MM-DD-Format
+        DATE=$(date +"%Y-%m-%d")
+        echo "## Changelog for PR #${{ github.event.pull_request.number }} - $DATE" > CHANGELOG.md
         echo "" >> CHANGELOG.md
-        git log $(git merge-base origin/master HEAD)..HEAD --oneline >> CHANGELOG.md  # Listet die PR-Commits auf
+        # Nur die Commit-Titel (ohne Merge-Details) hinzufügen
+        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"- %s" >> CHANGELOG.md
 
     - name: Commit and Push Changelog
       env:
