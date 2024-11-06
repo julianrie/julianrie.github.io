@@ -20,21 +20,22 @@ jobs:
       run: |
         # Aktuelles Datum im Format DD.MM.YYYY
         DATE=$(date +"%d.%m.%Y")
-        
-        # Leere Datei oder nur Datum hinzufügen
+
+        # Neue Changelog Datei erstellen, oder Datum in bestehende Datei einfügen
         echo "$DATE" > new_changelog.md
         echo "" >> new_changelog.md
-        
-        # Nur die Commit-Titel ohne Merge-Commits und nur Commits, die mit # beginnen
+
+        # Nur Commit-Titel mit '#' am Anfang und ohne Merge-Commits hinzufügen
         git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges | grep "^#" >> new_changelog.md
+
         echo "" >> new_changelog.md
-        
+
         # Bestehende CHANGELOG.md Datei anhängen, falls vorhanden
         if test -f CHANGELOG.md; then
-          echo "" >> new_changelog.md
+          echo "" >> new_changelog.md  # Leerzeile zwischen alten und neuen Einträgen
           cat CHANGELOG.md >> new_changelog.md
         fi
-        
+
         # Umbenennen zu CHANGELOG.md
         mv new_changelog.md CHANGELOG.md
 
