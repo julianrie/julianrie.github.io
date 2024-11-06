@@ -33,8 +33,6 @@ jobs:
       run: |
         echo "## Changelog for PR #${{ github.event.pull_request.number }}" > CHANGELOG.md
         echo "" >> CHANGELOG.md
-        # Holen der Commits zwischen dem aktuellen Branch und dem Ziel-Branch des PRs
-        echo "Fetching commits from $(git merge-base origin/master HEAD) to HEAD..." >> CHANGELOG.md
         git log $(git merge-base origin/master HEAD)..HEAD --oneline >> CHANGELOG.md  # Listet die PR-Commits auf
 
     - name: Display Changelog (for debugging)
@@ -53,5 +51,5 @@ jobs:
         message: |
           ## Changelog
           ```markdown
-          $(cat CHANGELOG.md)
+          $(<CHANGELOG.md)
           ```
