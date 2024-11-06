@@ -5,18 +5,18 @@
       "employees": [
         {
           "id": 1,
-          "name": "Max Mustermann ist sehr sehr schlau",
+          "name": "Max Mustermann ist sehr sehr schlaure",
           "position": "Software Engineer",
           "age": 30,
           "children": [
             {
               "id": 1,
-              "name": "Anna Mustermann ist auch sehr schlau",
+              "name": "Anna Mustermann ist auch sehr schlaudr",
               "age": 5
             },
             {
               "id": 2,
-              "name": "Julian Mustermann ist schlau",
+              "name": "Julian Mustermann ist schlaure",
               "age": 3
             }
           ]
