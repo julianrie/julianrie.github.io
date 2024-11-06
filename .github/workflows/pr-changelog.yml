@@ -18,22 +18,25 @@ jobs:
 
     - name: Generate Changelog Entry
       run: |
-        # Erstelle die leere Datei und füge das Datum nur einmal am Anfang ein
+        # Datum wird nur einmal am Anfang gesetzt
         DATE=$(date +"%d.%m.%Y")
         
-        # Füge das Datum zu Beginn der Changelog-Datei hinzu
-        echo "$DATE" > new_changelog.md
-        echo "" >> new_changelog.md
+        # Leere Changelog-Datei erstellen
+        echo "" > new_changelog.md
         
-        # Füge nur die Commits hinzu, die mit # beginnen und keine Merge-Commits enthalten
-        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges | grep "^#" >> new_changelog.md
+        # Alle gefilterten Commits mit # sammeln (die mit # beginnen, ohne Merge-Commits)
+        COMMITS=$(git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges | grep "^#")
         
-        # Wenn keine passenden Commits gefunden wurden, die mit # beginnen, dann keine Änderung der Datei
-        if [ ! -s new_changelog.md ]; then
+        # Überprüfen, ob es gefilterte Commits gibt
+        if [ -z "$COMMITS" ]; then
           echo "No filtered commits found, skipping changelog update."
           exit 0
         fi
 
+        # Wenn gefilterte Commits vorhanden sind, das Datum hinzufügen und die Commits
+        echo "$DATE" >> new_changelog.md
+        echo "" >> new_changelog.md
+        echo "$COMMITS" >> new_changelog.md
         echo "" >> new_changelog.md
         
         # Bestehende CHANGELOG.md Datei anhängen, falls vorhanden
@@ -41,7 +44,7 @@ jobs:
           cat CHANGELOG.md >> new_changelog.md
         fi
         
-        # Umbenennen zu CHANGELOG.md
+        # Die neue changelog.md Datei in die Haupt-CHANGELOG.md umbenennen
         mv new_changelog.md CHANGELOG.md
 
     - name: Commit and Push Changelog
