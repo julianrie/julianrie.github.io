@@ -22,8 +22,8 @@ jobs:
         DATE=$(date +"%Y-%m-%d")
         echo "## Changelog for PR #${{ github.event.pull_request.number }} - $DATE" > new_changelog.md
         echo "" >> new_changelog.md
-        # Nur die Commit-Titel (ohne Merge-Details) hinzufügen
-        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"- %s" >> new_changelog.md
+        # Nur die Commit-Titel ohne Merge-Commits hinzufügen
+        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"- %s" --no-merges >> new_changelog.md
         echo "" >> new_changelog.md
         # Bestehende CHANGELOG.md Datei anhängen, falls vorhanden
         if test -f CHANGELOG.md; then
