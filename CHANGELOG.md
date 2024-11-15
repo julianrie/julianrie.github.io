@@ -8,42 +8,32 @@
     diese bschreibung ist ohne hastag
 
 
+# test mit extended 1
+    extended beschreibung test 1
 
 
-# hash nur in extended
+07.11.2024
+
+# test mit extended 1
+    extended beschreibung test 1
+
+
+06.11.2024
+
+# test mit extended 1
+    extended beschreibung test 1
 
 
 # test mit extended 1
     extended beschreibung test 1
 
 
-# Update test.json mit hash
-
-07.11.2024
-
-# 7 nov Update test.json
-
-06.11.2024
-
-# update mit kommentare
-
-
-# letzte Prüfung mit hashtag
-
-
-# automatisches aktualisieren
-
-
-# neuer tag
-
 05.11.2024
 
-# es funktioniert jetzt !
+# test mit extended 1
+    extended beschreibung test 1
 
 
-# 2 Update test.json
-
-
-# 1 Update test.json
-
+# test mit extended 1
+    extended beschreibung test 1
 
