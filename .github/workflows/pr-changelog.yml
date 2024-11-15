@@ -2,8 +2,8 @@ name: Generate Changelog for Pull Request
 
 on:
   pull_request:
-    branches: [ master ]  # workflow master Branch
-    types: [opened, synchronize]  # workflow if PR opened or synchronized
+    branches: [ master ]  # Workflow auf master Branch
+    types: [opened, synchronize]  # Workflow bei PR-Öffnen oder Synchronisation
 
 jobs:
   generate_changelog:
@@ -14,58 +14,59 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4  # GitHub-Checkout-Action
       with:
-        fetch-depth: 0  # fetch the entire Repository with all branches
+        fetch-depth: 0  # Komplettes Repository mit allen Branches auschecken
 
     - name: Generate Changelog Entry
       run: |
-        # current date in DD.MM.YYYY format
-        # saved date in variable
+        # Aktuelles Datum erfassen
         DATE=$(date +"%d.%m.%Y")
 
-        # create or empty the temporary file
-        # write date + blank line in new file 
+        # Temporäre Datei erstellen/leeren
         echo "$DATE" > new_changelog.md
         echo "" >> new_changelog.md
 
-        # only commit title without merge-commits and only commits with an #
-        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s" --no-merges | grep "^#" >> new_changelog.md
-        
-        # write blank line
-        echo "" >> new_changelog.md 
+        # Commit-Messages mit Extended Description holen und formatieren
+        git log $(git merge-base origin/master HEAD)..HEAD --pretty=format:"%s%n%b" --no-merges | awk '
+          BEGIN { in_commit = 0 }
+          /^#/ { 
+            if (in_commit) { print ""; in_commit = 0 }
+            print $0; 
+            in_commit = 1 
+          }
+          /^[^#]/ && in_commit { print "    " $0 }
+        ' >> new_changelog.md
 
-        # check if the file exists
-        if test -f CHANGELOG.md; then  
-          # check if the date exists
+        echo "" >> new_changelog.md
+
+        # Wenn CHANGELOG.md existiert, Inhalte zusammenführen
+        if test -f CHANGELOG.md; then
           if ! grep -q "^$DATE" CHANGELOG.md; then
-            # if not add the content to the end of the file 
             cat CHANGELOG.md >> new_changelog.md
           else
-            # if exists add only new content without date
-            # add all lines except the first one
-            tail -n +2 CHANGELOG.md >> new_changelog.md 
+            tail -n +2 CHANGELOG.md >> new_changelog.md
           fi
         fi
 
-        # rename the temporary file to CHANGELOG.md
+        # Temporäre Datei in CHANGELOG.md umbenennen
         mv new_changelog.md CHANGELOG.md  
 
     - name: Commit and Push Changelog
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # github config
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # GitHub-Konfiguration
       run: |
         git config --global user.name "GitHub Actions Bot"  
         git config --global user.email "actions@github.com"  
         git add CHANGELOG.md  
         git commit -m "Update changelog for PR #${{ github.event.pull_request.number }}" || echo "No changes to commit"
-        git push origin HEAD:${{ github.head_ref }}  # Pusht changes to PR-branch
+        git push origin HEAD:${{ github.head_ref }}  # Änderungen in den PR-Branch pushen
 
     - name: Comment on Pull Request with Changelog
-      uses: marocchino/sticky-pull-request-comment@v2  # GitHub Action for commits
+      uses: marocchino/sticky-pull-request-comment@v2  # GitHub Action für Kommentare
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}  # access token for cmomment action
+        token: ${{ secrets.GITHUB_TOKEN }}  # Access Token für Kommentar-Action
         header: changelog 
         message: |
           ## Changelog
-          
-markdown
-          ${{ env.changelog_content }}  # insert the comments of
+          ```markdown
+          ${{ env.changelog_content }}  # Changelog-Inhalt als Kommentar einfügen
+          ```
