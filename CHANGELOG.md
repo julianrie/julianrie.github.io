@@ -1,3 +1,8 @@
+04.12.2024
+
+# Prozessorientierung
+    Aufbau Mindset & Fähigkeiten in der TK erfolgreich abgeschlossen.
+
 15.11.2024
 
 # neuer commit
